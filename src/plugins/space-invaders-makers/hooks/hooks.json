@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "hooks": {
+    "SessionStart": [
+      {
+        "type": "command",
+        "bash": "./scripts/session-start.sh",
+        "powershell": ".\\scripts\\session-start.ps1",
+        "timeoutSec": 10
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "type": "command",
+        "bash": "./scripts/user-prompt-submitted.sh",
+        "powershell": ".\\scripts\\user-prompt-submitted.ps1",
+        "timeoutSec": 10
+      }
+    ],
+    "Stop": [
+      {
+        "type": "command",
+        "bash": "./scripts/agent-stop.sh",
+        "powershell": ".\\scripts\\agent-stop.ps1",
+        "timeoutSec": 10
+      }
+    ],
+    "PostToolUse": [
+      {
+        "type": "command",
+        "bash": "./scripts/tool-used.sh",
+        "powershell": ".\\scripts\\tool-used.ps1",
+        "timeoutSec": 10
+      }
+    ],
+    "SubagentStop": [
+      {
+        "type": "command",
+        "bash": "./scripts/subagent-stop.sh",
+        "powershell": ".\\scripts\\subagent-stop.ps1",
+        "timeoutSec": 10
+      }
+    ]
+  }
+}

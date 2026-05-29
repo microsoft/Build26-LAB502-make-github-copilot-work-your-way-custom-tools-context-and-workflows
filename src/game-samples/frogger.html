@@ -1,0 +1,649 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Frogger Invaders</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #08111d;
+      --panel: rgba(8, 18, 33, 0.86);
+      --panel-border: #79d7ff;
+      --text: #eafcff;
+      --muted: #8fb6c7;
+      --frog: #7cff86;
+      --frog-dark: #39b54a;
+      --hazard: #ff7b7b;
+      --warning: #ffd166;
+      --river: #133b6b;
+      --lane: #2d343f;
+      --lane-line: rgba(255, 255, 255, 0.2);
+      --car: #ff9f43;
+      --bullet: #fff2a8;
+      --enemy-bullet: #ff9ea8;
+      --victory: #b8ffda;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      font-family: Arial, Helvetica, sans-serif;
+      background:
+        radial-gradient(circle at top, rgba(24, 85, 145, 0.45), transparent 35%),
+        linear-gradient(180deg, #030712 0%, #07111d 55%, #030712 100%);
+      color: var(--text);
+    }
+
+    .shell {
+      width: min(100%, 960px);
+      display: grid;
+      gap: 18px;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      padding: 16px 20px;
+      border: 2px solid var(--panel-border);
+      border-radius: 18px;
+      background: var(--panel);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+    }
+
+    .title-block h1 {
+      margin: 0 0 6px;
+      font-size: clamp(1.8rem, 3vw, 2.8rem);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .title-block p,
+    .controls {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.95rem;
+      line-height: 1.5;
+    }
+
+    .game-wrap {
+      position: relative;
+      border: 2px solid var(--panel-border);
+      border-radius: 22px;
+      padding: 18px;
+      background: var(--panel);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: auto;
+      border-radius: 16px;
+      background: linear-gradient(180deg, #0f2745 0%, #133b6b 32%, #2d343f 32%, #262d38 100%);
+    }
+
+    .legend {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      margin-top: 14px;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .legend strong {
+      color: var(--text);
+    }
+
+    @media (max-width: 720px) {
+      body {
+        padding: 14px;
+      }
+
+      .header,
+      .game-wrap {
+        padding: 14px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="header">
+      <div class="title-block">
+        <h1>Frogger Invaders</h1>
+        <p>Classic Space Invaders pressure, rethemed as a midnight frog-crossing showdown.</p>
+      </div>
+      <p class="controls">Move with <strong>Left / Right</strong> or <strong>A / D</strong>, fire with <strong>Space</strong>, restart with <strong>Enter</strong>.</p>
+    </section>
+
+    <section class="game-wrap">
+      <canvas id="game" width="900" height="700" aria-label="Frogger Invaders game canvas"></canvas>
+      <div class="legend">
+        <div><strong>Hero:</strong> a roadside frog launcher guarding the crossing lanes.</div>
+        <div><strong>Invaders:</strong> neon traffic critters descend in formation and fire back.</div>
+        <div><strong>Theme:</strong> river sky, painted lanes, headlights, and arcade HUD styling inspired by Frogger.</div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const canvas = document.getElementById("game");
+    const ctx = canvas.getContext("2d");
+
+    const game = {
+      width: canvas.width,
+      height: canvas.height,
+      keys: { left: false, right: false },
+      player: null,
+      bullets: [],
+      enemyBullets: [],
+      enemies: [],
+      particles: [],
+      score: 0,
+      lives: 3,
+      level: 1,
+      highScore: 0,
+      enemyDirection: 1,
+      enemyDropPending: false,
+      enemyStepTimer: 0,
+      enemyFireTimer: 0,
+      fireCooldown: 0,
+      invaderSpeed: 0.9,
+      state: "running",
+      message: "",
+      flashTimer: 0
+    };
+
+    const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+    const rand = (min, max) => Math.random() * (max - min) + min;
+
+    function createPlayer() {
+      return {
+        x: game.width / 2,
+        y: game.height - 72,
+        width: 58,
+        height: 34,
+        speed: 420,
+        hitTimer: 0
+      };
+    }
+
+    function resetFormation() {
+      game.enemies = [];
+      const rows = Math.min(6, 3 + game.level);
+      const cols = 8;
+      const offsetX = 140;
+      const offsetY = 110;
+      const spacingX = 76;
+      const spacingY = 58;
+
+      for (let row = 0; row < rows; row += 1) {
+        for (let col = 0; col < cols; col += 1) {
+          const variant = (row + col) % 3;
+          game.enemies.push({
+            x: offsetX + col * spacingX,
+            y: offsetY + row * spacingY,
+            width: 40,
+            height: 28,
+            row,
+            col,
+            variant,
+            alive: true,
+            bob: rand(0, Math.PI * 2)
+          });
+        }
+      }
+
+      game.enemyDirection = 1;
+      game.enemyDropPending = false;
+      game.enemyStepTimer = 0;
+      game.enemyFireTimer = 0.55;
+      game.invaderSpeed = Math.min(2.3, 0.85 + game.level * 0.16);
+      game.message = `Wave ${game.level}`;
+      game.flashTimer = 1.1;
+    }
+
+    function resetGame() {
+      game.player = createPlayer();
+      game.bullets = [];
+      game.enemyBullets = [];
+      game.particles = [];
+      game.score = 0;
+      game.lives = 3;
+      game.level = 1;
+      game.state = "running";
+      game.fireCooldown = 0;
+      resetFormation();
+    }
+
+    function nextWave() {
+      game.level += 1;
+      game.bullets = [];
+      game.enemyBullets = [];
+      resetFormation();
+    }
+
+    function createBullet(x, y, vy, hostile = false) {
+      return {
+        x,
+        y,
+        width: hostile ? 6 : 4,
+        height: hostile ? 16 : 18,
+        vy,
+        hostile
+      };
+    }
+
+    function spawnBurst(x, y, color, count) {
+      for (let i = 0; i < count; i += 1) {
+        game.particles.push({
+          x,
+          y,
+          vx: rand(-120, 120),
+          vy: rand(-140, 80),
+          life: rand(0.35, 0.8),
+          maxLife: 1,
+          radius: rand(2, 5),
+          color
+        });
+      }
+    }
+
+    function playerFire() {
+      if (game.state !== "running" || game.fireCooldown > 0) {
+        return;
+      }
+
+      game.bullets.push(createBullet(game.player.x, game.player.y - 24, -620, false));
+      game.fireCooldown = 0.22;
+    }
+
+    function triggerGameOver(won) {
+      game.state = won ? "won" : "lost";
+      game.message = won ? "Crossing secured!" : "The lanes are overrun!";
+      game.flashTimer = 999;
+      game.highScore = Math.max(game.highScore, game.score);
+    }
+
+    function intersects(a, b) {
+      return (
+        Math.abs(a.x - b.x) * 2 < a.width + b.width &&
+        Math.abs(a.y - b.y) * 2 < a.height + b.height
+      );
+    }
+
+    function getBottomEnemies() {
+      const byColumn = new Map();
+      for (const enemy of game.enemies) {
+        if (!enemy.alive) {
+          continue;
+        }
+
+        const current = byColumn.get(enemy.col);
+        if (!current || enemy.y > current.y) {
+          byColumn.set(enemy.col, enemy);
+        }
+      }
+      return [...byColumn.values()];
+    }
+
+    function update(dt) {
+      if (!game.player) {
+        return;
+      }
+
+      game.fireCooldown = Math.max(0, game.fireCooldown - dt);
+      game.flashTimer = Math.max(0, game.flashTimer - dt);
+      game.player.hitTimer = Math.max(0, game.player.hitTimer - dt);
+
+      if (game.state === "running") {
+        const movement = (game.keys.right - game.keys.left) * game.player.speed * dt;
+        game.player.x = clamp(game.player.x + movement, 44, game.width - 44);
+
+        game.enemyStepTimer += dt;
+        const stepInterval = Math.max(0.16, 0.62 - game.level * 0.04);
+        if (game.enemyStepTimer >= stepInterval) {
+          game.enemyStepTimer = 0;
+          let leftMost = Infinity;
+          let rightMost = -Infinity;
+          let lowest = -Infinity;
+
+          for (const enemy of game.enemies) {
+            if (!enemy.alive) {
+              continue;
+            }
+            leftMost = Math.min(leftMost, enemy.x - enemy.width / 2);
+            rightMost = Math.max(rightMost, enemy.x + enemy.width / 2);
+            lowest = Math.max(lowest, enemy.y + enemy.height / 2);
+          }
+
+          const step = 16 + game.level * 1.6;
+          if (rightMost >= game.width - 56 && game.enemyDirection > 0) {
+            game.enemyDropPending = true;
+            game.enemyDirection = -1;
+          } else if (leftMost <= 56 && game.enemyDirection < 0) {
+            game.enemyDropPending = true;
+            game.enemyDirection = 1;
+          }
+
+          for (const enemy of game.enemies) {
+            if (!enemy.alive) {
+              continue;
+            }
+            enemy.x += step * game.enemyDirection;
+            enemy.bob += 0.3;
+            if (game.enemyDropPending) {
+              enemy.y += 26;
+            }
+          }
+
+          game.enemyDropPending = false;
+
+          if (lowest >= game.player.y - 14) {
+            triggerGameOver(false);
+          }
+        }
+
+        game.enemyFireTimer -= dt;
+        if (game.enemyFireTimer <= 0) {
+          const shooters = getBottomEnemies();
+          if (shooters.length) {
+            const shooter = shooters[Math.floor(Math.random() * shooters.length)];
+            game.enemyBullets.push(createBullet(shooter.x, shooter.y + 20, 280 + game.level * 28, true));
+          }
+          game.enemyFireTimer = Math.max(0.3, 1.15 - game.level * 0.06);
+        }
+      }
+
+      for (const bullet of game.bullets) {
+        bullet.y += bullet.vy * dt;
+      }
+      for (const bullet of game.enemyBullets) {
+        bullet.y += bullet.vy * dt;
+      }
+
+      for (const particle of game.particles) {
+        particle.x += particle.vx * dt;
+        particle.y += particle.vy * dt;
+        particle.vy += 240 * dt;
+        particle.life -= dt;
+      }
+
+      game.bullets = game.bullets.filter((bullet) => bullet.y > -30);
+      game.enemyBullets = game.enemyBullets.filter((bullet) => bullet.y < game.height + 30);
+      game.particles = game.particles.filter((particle) => particle.life > 0);
+
+      if (game.state !== "running") {
+        return;
+      }
+
+      for (const bullet of game.bullets) {
+        for (const enemy of game.enemies) {
+          if (!enemy.alive || !intersects(bullet, enemy)) {
+            continue;
+          }
+
+          enemy.alive = false;
+          bullet.y = -100;
+          game.score += 100 + enemy.row * 15;
+          game.highScore = Math.max(game.highScore, game.score);
+          spawnBurst(enemy.x, enemy.y, "#7cff86", 10);
+          break;
+        }
+      }
+
+      for (const bullet of game.enemyBullets) {
+        if (intersects(bullet, game.player)) {
+          bullet.y = game.height + 100;
+          game.lives -= 1;
+          game.player.hitTimer = 0.6;
+          spawnBurst(game.player.x, game.player.y, "#ff7b7b", 16);
+          if (game.lives <= 0) {
+            triggerGameOver(false);
+          }
+        }
+      }
+
+      if (game.enemies.every((enemy) => !enemy.alive)) {
+        if (game.level >= 5) {
+          triggerGameOver(true);
+        } else {
+          nextWave();
+        }
+      }
+    }
+
+    function drawBackground() {
+      const riverHeight = 215;
+      ctx.fillStyle = "#0d2644";
+      ctx.fillRect(0, 0, game.width, riverHeight);
+
+      for (let i = 0; i < 5; i += 1) {
+        ctx.fillStyle = `rgba(255,255,255,${0.06 + i * 0.01})`;
+        ctx.fillRect(0, riverHeight + i * 82, game.width, 3);
+      }
+
+      ctx.fillStyle = "rgba(255, 255, 255, 0.08)";
+      for (let x = 40; x < game.width; x += 90) {
+        ctx.fillRect(x, 320, 45, 6);
+        ctx.fillRect(x + 20, 402, 45, 6);
+        ctx.fillRect(x - 10, 484, 45, 6);
+      }
+
+      for (let i = 0; i < 36; i += 1) {
+        const x = (i * 157) % game.width;
+        const y = (i * 97) % 190;
+        ctx.fillStyle = i % 4 === 0 ? "rgba(255, 242, 168, 0.7)" : "rgba(255,255,255,0.55)";
+        ctx.fillRect(x, y, 2, 2);
+      }
+
+      const glowX = 80 + Math.sin(performance.now() * 0.0012) * 16;
+      ctx.fillStyle = "rgba(255, 209, 102, 0.16)";
+      ctx.beginPath();
+      ctx.arc(glowX, 88, 54, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    function drawHud() {
+      ctx.fillStyle = "rgba(3, 9, 18, 0.68)";
+      ctx.fillRect(24, 18, game.width - 48, 72);
+      ctx.strokeStyle = "rgba(121, 215, 255, 0.5)";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(24, 18, game.width - 48, 72);
+
+      ctx.fillStyle = "#eafcff";
+      ctx.font = "bold 24px Arial";
+      ctx.fillText(`SCORE ${String(game.score).padStart(5, "0")}`, 46, 47);
+      ctx.fillText(`HIGH ${String(game.highScore).padStart(5, "0")}`, 322, 47);
+      ctx.fillText(`WAVE ${game.level}`, 600, 47);
+      ctx.fillText(`LIVES ${game.lives}`, 760, 47);
+
+      ctx.fillStyle = "#8fb6c7";
+      ctx.font = "16px Arial";
+      ctx.fillText("Frogger style crossing defense", 46, 72);
+
+      if (game.flashTimer > 0 && game.message) {
+        ctx.save();
+        ctx.globalAlpha = 0.72 + Math.sin(performance.now() * 0.012) * 0.18;
+        ctx.fillStyle = "#b8ffda";
+        ctx.textAlign = "center";
+        ctx.font = "bold 24px Arial";
+        ctx.fillText(game.message, game.width / 2, 72);
+        ctx.restore();
+      }
+    }
+
+    function drawPlayer() {
+      const { player } = game;
+      const flash = player.hitTimer > 0 && Math.floor(player.hitTimer * 16) % 2 === 0;
+      if (flash) {
+        return;
+      }
+
+      ctx.save();
+      ctx.translate(player.x, player.y);
+
+      ctx.fillStyle = "#39b54a";
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 28, 18, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = "#7cff86";
+      ctx.beginPath();
+      ctx.ellipse(0, -6, 18, 12, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = "#08111d";
+      ctx.beginPath();
+      ctx.arc(-9, -8, 4, 0, Math.PI * 2);
+      ctx.arc(9, -8, 4, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = "#ffd166";
+      ctx.fillRect(-5, -28, 10, 18);
+
+      ctx.fillStyle = "#39b54a";
+      ctx.fillRect(-26, 7, 12, 8);
+      ctx.fillRect(14, 7, 12, 8);
+      ctx.restore();
+    }
+
+    function drawEnemy(enemy) {
+      ctx.save();
+      ctx.translate(enemy.x, enemy.y + Math.sin(enemy.bob) * 3);
+
+      const palettes = [
+        ["#ff7b7b", "#8c1c31"],
+        ["#79d7ff", "#1c4f80"],
+        ["#ff9f43", "#8c4c10"]
+      ];
+      const [main, shadow] = palettes[enemy.variant];
+
+      ctx.fillStyle = shadow;
+      ctx.fillRect(-18, -8, 36, 18);
+      ctx.fillRect(-24, -2, 10, 14);
+      ctx.fillRect(14, -2, 10, 14);
+      ctx.fillRect(-10, 10, 6, 10);
+      ctx.fillRect(4, 10, 6, 10);
+
+      ctx.fillStyle = main;
+      ctx.fillRect(-16, -12, 32, 18);
+      ctx.fillRect(-22, -4, 8, 12);
+      ctx.fillRect(14, -4, 8, 12);
+
+      ctx.fillStyle = "#08111d";
+      ctx.fillRect(-10, -6, 6, 6);
+      ctx.fillRect(4, -6, 6, 6);
+      ctx.restore();
+    }
+
+    function drawBullets() {
+      for (const bullet of game.bullets) {
+        ctx.fillStyle = "#fff2a8";
+        ctx.fillRect(bullet.x - bullet.width / 2, bullet.y - bullet.height / 2, bullet.width, bullet.height);
+      }
+
+      for (const bullet of game.enemyBullets) {
+        ctx.fillStyle = "#ff9ea8";
+        ctx.fillRect(bullet.x - bullet.width / 2, bullet.y - bullet.height / 2, bullet.width, bullet.height);
+      }
+    }
+
+    function drawParticles() {
+      for (const particle of game.particles) {
+        ctx.globalAlpha = Math.max(0, particle.life / particle.maxLife);
+        ctx.fillStyle = particle.color;
+        ctx.beginPath();
+        ctx.arc(particle.x, particle.y, particle.radius, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    function drawOverlay() {
+      if (game.state === "running") {
+        return;
+      }
+
+      ctx.fillStyle = "rgba(3, 9, 18, 0.76)";
+      ctx.fillRect(0, 0, game.width, game.height);
+
+      ctx.textAlign = "center";
+      ctx.fillStyle = game.state === "won" ? "#b8ffda" : "#ffb3b3";
+      ctx.font = "bold 54px Arial";
+      ctx.fillText(game.state === "won" ? "YOU WIN" : "GAME OVER", game.width / 2, game.height / 2 - 40);
+
+      ctx.fillStyle = "#eafcff";
+      ctx.font = "24px Arial";
+      ctx.fillText(game.message, game.width / 2, game.height / 2 + 10);
+      ctx.fillText(`Final score: ${game.score}`, game.width / 2, game.height / 2 + 50);
+
+      ctx.fillStyle = "#8fb6c7";
+      ctx.font = "20px Arial";
+      ctx.fillText("Press Enter to hop back into the crossing.", game.width / 2, game.height / 2 + 96);
+      ctx.textAlign = "start";
+    }
+
+    function render() {
+      ctx.clearRect(0, 0, game.width, game.height);
+      drawBackground();
+      drawHud();
+
+      for (const enemy of game.enemies) {
+        if (enemy.alive) {
+          drawEnemy(enemy);
+        }
+      }
+
+      drawBullets();
+      drawPlayer();
+      drawParticles();
+      drawOverlay();
+    }
+
+    let lastTime = performance.now();
+    function frame(now) {
+      const dt = Math.min(0.033, (now - lastTime) / 1000);
+      lastTime = now;
+      update(dt);
+      render();
+      requestAnimationFrame(frame);
+    }
+
+    function onKeyChange(event, isDown) {
+      const { code } = event;
+      if (code === "ArrowLeft" || code === "KeyA") {
+        game.keys.left = isDown ? 1 : 0;
+      } else if (code === "ArrowRight" || code === "KeyD") {
+        game.keys.right = isDown ? 1 : 0;
+      } else if (code === "Space") {
+        if (isDown) {
+          playerFire();
+        }
+        event.preventDefault();
+      } else if (code === "Enter" && isDown && game.state !== "running") {
+        resetGame();
+      }
+    }
+
+    window.addEventListener("keydown", (event) => onKeyChange(event, true));
+    window.addEventListener("keyup", (event) => onKeyChange(event, false));
+
+    resetGame();
+    requestAnimationFrame(frame);
+  </script>
+</body>
+</html>

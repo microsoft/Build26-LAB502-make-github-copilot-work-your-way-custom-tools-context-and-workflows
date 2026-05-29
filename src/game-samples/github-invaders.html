@@ -1,0 +1,1019 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>GitHub Invaders</title>
+<style>
+  :root{
+    /* Contribution-graph 5-shade ramp (invader tiers, low -> high) */
+    --c0:#ebedf0; --c1:#9be9a8; --c2:#40c463; --c3:#30a14e; --c4:#216e39;
+    /* Brand palette */
+    --gh-green:#0FBF3E; --gh-green-deep:#08872B; --gh-green-bg:#0A241B;
+    --gh-g1:#F2F5F3; --gh-g2:#E4EBE6; --gh-g3:#B6BFB8; --gh-g4:#909692; --gh-g5:#232925; --gh-g6:#101411;
+    --copilot:#8534F3; --security:#3094FF; --warn:#F08A3A;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--gh-g6);color:var(--gh-g1);
+    font:14px/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    overflow:hidden;-webkit-font-smoothing:antialiased}
+  #wrap{position:fixed;inset:0;display:grid;place-items:center}
+  #stage{position:relative;width:min(100vw,calc(100vh*0.75));aspect-ratio:3/4;
+    background:linear-gradient(180deg,#06140f 0%,var(--gh-green-bg) 100%);
+    border:1px solid var(--gh-g5);box-shadow:0 0 0 4px var(--gh-g6),0 0 60px rgba(15,191,62,.15) inset;
+    overflow:hidden;border-radius:6px}
+  canvas{display:block;width:100%;height:100%;image-rendering:pixelated}
+  .overlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;
+    justify-content:center;text-align:center;padding:20px;
+    background:radial-gradient(ellipse at center,rgba(10,36,27,.85),rgba(10,20,17,.95));
+    backdrop-filter:blur(2px);z-index:5}
+  .overlay.hidden{display:none}
+  .overlay h1{font-size:clamp(28px,5vw,56px);margin:0 0 8px;letter-spacing:2px;
+    color:var(--gh-green);text-shadow:0 0 18px rgba(15,191,62,.6)}
+  .overlay h2{font-size:clamp(20px,3vw,32px);margin:0 0 8px;color:var(--c2)}
+  .overlay p{margin:6px 0;color:var(--gh-g3)}
+  .overlay .key{display:inline-block;padding:2px 8px;border:1px solid var(--gh-g4);
+    border-radius:4px;background:var(--gh-g5);color:var(--gh-g1);margin:0 2px;font-size:12px}
+  .overlay .mascot{margin:8px 0;line-height:0;filter:drop-shadow(0 8px 18px rgba(0,0,0,.5))}
+  .overlay .mascot.emoji{font-size:clamp(64px,12vw,140px);line-height:1}
+  .overlay .mascot svg{width:clamp(140px,22vw,220px);height:auto;display:block}
+  @keyframes float-y { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+  @keyframes hover-pal { 0%,100%{transform:translateX(-2px)} 50%{transform:translateX(2px)} }
+  .mascot .octo-body { animation: float-y 3.2s ease-in-out infinite; transform-origin:center; }
+  .mascot .invader-pal { animation: hover-pal 1.8s ease-in-out infinite; transform-origin:center; }
+  .overlay .bubble{display:inline-block;background:var(--gh-g1);color:var(--gh-g6);
+    padding:6px 12px;border-radius:14px;position:relative;margin:4px 0 14px;font-weight:600}
+  .overlay .bubble:after{content:"";position:absolute;left:18px;top:-7px;border:7px solid transparent;
+    border-bottom-color:var(--gh-g1);border-top:0}
+  .scoreline{display:flex;gap:24px;margin-top:10px;color:var(--gh-g2);font-size:14px}
+  .scoreline b{color:var(--gh-green)}
+  .legend{margin-top:14px;display:flex;gap:6px;align-items:center;color:var(--gh-g3);font-size:12px}
+  .legend .sq{width:12px;height:12px;border-radius:2px;display:inline-block}
+  footer{position:absolute;bottom:6px;left:0;right:0;text-align:center;color:var(--gh-g4);font-size:10px;
+    letter-spacing:1px;pointer-events:none;z-index:1}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <div id="stage">
+    <canvas id="game" width="600" height="800"></canvas>
+
+    <!-- Title screen -->
+    <div id="title" class="overlay">
+      <div class="mascot" aria-label="Space Invaders Octocat">
+        <svg viewBox="0 0 220 240" xmlns="http://www.w3.org/2000/svg" role="img">
+          <defs>
+            <radialGradient id="halo" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="#9be9a8" stop-opacity=".55"/>
+              <stop offset="70%" stop-color="#0FBF3E" stop-opacity="0"/>
+            </radialGradient>
+          </defs>
+
+          <!-- Soft green halo behind everything -->
+          <ellipse cx="110" cy="135" rx="105" ry="95" fill="url(#halo)"/>
+
+          <!-- Little pixel-art space invader pal (classic crab silhouette), floating above -->
+          <g class="invader-pal" fill="#9be9a8" shape-rendering="crispEdges">
+            <!-- 11 cols x 8 rows, cell=6px, origin (77,4) -->
+            <!-- row 0: . . X . . . . . X . . -->
+            <rect x="89" y="4"  width="6" height="6"/>
+            <rect x="119" y="4" width="6" height="6"/>
+            <!-- row 1: . . . X . . . X . . . -->
+            <rect x="95" y="10" width="6" height="6"/>
+            <rect x="113" y="10" width="6" height="6"/>
+            <!-- row 2: . . X X X X X X X . . -->
+            <rect x="89" y="16" width="42" height="6"/>
+            <!-- row 3: . X X . X X X . X X . -->
+            <rect x="83" y="22" width="12" height="6"/>
+            <rect x="101" y="22" width="18" height="6"/>
+            <rect x="125" y="22" width="12" height="6"/>
+            <!-- row 4: X X X X X X X X X X X -->
+            <rect x="77" y="28" width="66" height="6"/>
+            <!-- row 5: X . X X X X X X X . X -->
+            <rect x="77" y="34" width="6" height="6"/>
+            <rect x="89" y="34" width="42" height="6"/>
+            <rect x="137" y="34" width="6" height="6"/>
+            <!-- row 6: X . X . . . . . X . X -->
+            <rect x="77" y="40" width="6" height="6"/>
+            <rect x="89" y="40" width="6" height="6"/>
+            <rect x="125" y="40" width="6" height="6"/>
+            <rect x="137" y="40" width="6" height="6"/>
+            <!-- row 7: . . . X X . X X . . . -->
+            <rect x="95" y="46" width="12" height="6"/>
+            <rect x="113" y="46" width="12" height="6"/>
+          </g>
+
+          <g class="octo-body">
+            <!-- Tentacles (drawn behind body) -->
+            <g fill="#0a241b" stroke="#08872B" stroke-width="2" stroke-linejoin="round">
+              <path d="M55,170 C 35,190 35,215 50,225 C 55,212 65,210 72,218 C 70,205 65,190 60,180 Z"/>
+              <path d="M82,180 C 75,205 80,225 95,228 C 92,215 96,208 104,212 C 100,200 95,188 92,180 Z"/>
+              <path d="M110,182 C 108,210 115,228 122,228 C 122,215 128,210 134,216 C 130,200 122,188 118,182 Z"/>
+              <path d="M138,180 C 145,205 142,225 130,228 C 132,215 130,208 122,212 C 126,200 132,188 134,180 Z"/>
+              <path d="M165,170 C 185,190 185,215 170,225 C 165,212 155,210 148,218 C 152,205 158,190 160,180 Z"/>
+            </g>
+
+            <!-- Cat ears -->
+            <polygon points="55,80 50,38 88,72" fill="#0a241b"/>
+            <polygon points="165,80 170,38 132,72" fill="#0a241b"/>
+            <polygon points="63,72 60,52 80,68" fill="#0FBF3E"/>
+            <polygon points="157,72 160,52 140,68" fill="#0FBF3E"/>
+
+            <!-- Head: dark with subtle green inner glow -->
+            <ellipse cx="110" cy="120" rx="68" ry="60" fill="#0a241b" stroke="#08872B" stroke-width="2"/>
+            <ellipse cx="110" cy="115" rx="62" ry="52" fill="#101411"/>
+
+            <!-- Pixelated invader-style eyes (square, glowing green) -->
+            <g fill="#9be9a8" shape-rendering="crispEdges">
+              <rect x="74"  y="100" width="22" height="22"/>
+              <rect x="124" y="100" width="22" height="22"/>
+            </g>
+            <g fill="#0FBF3E" shape-rendering="crispEdges">
+              <rect x="80"  y="106" width="10" height="10"/>
+              <rect x="130" y="106" width="10" height="10"/>
+            </g>
+            <!-- Eye gleam -->
+            <g fill="#F2F5F3" shape-rendering="crispEdges">
+              <rect x="82"  y="108" width="3" height="3"/>
+              <rect x="132" y="108" width="3" height="3"/>
+            </g>
+
+            <!-- Tiny smirk -->
+            <path d="M96,148 Q110,158 124,148" stroke="#9be9a8" stroke-width="3" fill="none" stroke-linecap="round"/>
+
+            <!-- Cheek dots -->
+            <circle cx="78"  cy="142" r="3" fill="#216e39"/>
+            <circle cx="142" cy="142" r="3" fill="#216e39"/>
+          </g>
+        </svg>
+      </div>
+      <h1>GITHUB&nbsp;INVADERS</h1>
+      <p>Defend the repo. Ship the patch. Merge the universe.</p>
+      <div class="legend">
+        <span>Threat tier:</span>
+        <span class="sq" style="background:var(--c1)"></span>
+        <span class="sq" style="background:var(--c2)"></span>
+        <span class="sq" style="background:var(--c3)"></span>
+        <span class="sq" style="background:var(--c4)"></span>
+      </div>
+      <p style="margin-top:18px">
+        <span class="key">←</span> <span class="key">→</span> move &nbsp;
+        <span class="key">Space</span> fire &nbsp;
+        <span class="key">P</span> pause
+      </p>
+      <p><span class="key">Enter</span> to start</p>
+      <div class="scoreline">High score <b id="title-high">0</b></div>
+    </div>
+
+    <!-- Pause screen -->
+    <div id="pause" class="overlay hidden">
+      <h2>PAUSED</h2>
+      <p>Press <span class="key">P</span> or <span class="key">Esc</span> to resume</p>
+    </div>
+
+    <!-- Game over screen -->
+    <div id="over" class="overlay hidden">
+      <div class="mascot emoji" aria-hidden="true">🦆</div>
+      <div class="bubble">Time to debug…</div>
+      <h2>GAME OVER</h2>
+      <div class="scoreline">
+        <span>Score <b id="over-score">0</b></span>
+        <span>High <b id="over-high">0</b></span>
+        <span>Wave <b id="over-wave">1</b></span>
+      </div>
+      <p style="margin-top:18px"><span class="key">Enter</span> to play again</p>
+    </div>
+
+    <footer>built with ❤ &nbsp;•&nbsp; contribution-graph greens &nbsp;•&nbsp; mascots are decorative only</footer>
+  </div>
+</div>
+
+<script>
+(() => {
+"use strict";
+
+/* ============================================================
+   THEME — GitHub contribution graph + brand palette
+============================================================ */
+const T = {
+  bg0:'#06140f', bg1:'#0A241B',
+  c0:'#ebedf0', c1:'#9be9a8', c2:'#40c463', c3:'#30a14e', c4:'#216e39',
+  green:'#0FBF3E', greenDeep:'#08872B',
+  g1:'#F2F5F3', g2:'#E4EBE6', g3:'#B6BFB8', g4:'#909692', g5:'#232925', g6:'#101411',
+  copilot:'#8534F3', security:'#3094FF', warn:'#F08A3A', danger:'#C53211'
+};
+
+/* ============================================================
+   CANVAS
+============================================================ */
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+const W = canvas.width, H = canvas.height;
+
+/* ============================================================
+   INPUT
+============================================================ */
+const keys = Object.create(null);
+const pressed = Object.create(null); // edge-triggered
+addEventListener('keydown', e => {
+  const k = e.key;
+  if (['ArrowLeft','ArrowRight','ArrowUp','ArrowDown',' '].includes(k)) e.preventDefault();
+  if (!keys[k]) pressed[k] = true;
+  keys[k] = true;
+});
+addEventListener('keyup', e => { keys[e.key] = false; });
+function consume(k){ const v = pressed[k]; pressed[k] = false; return v; }
+
+/* ============================================================
+   STATE MACHINE
+============================================================ */
+const State = { TITLE:'TITLE', PLAYING:'PLAYING', PAUSED:'PAUSED', OVER:'OVER' };
+let state = State.TITLE;
+
+const ui = {
+  title: document.getElementById('title'),
+  pause: document.getElementById('pause'),
+  over:  document.getElementById('over'),
+  titleHigh: document.getElementById('title-high'),
+  overScore: document.getElementById('over-score'),
+  overHigh:  document.getElementById('over-high'),
+  overWave:  document.getElementById('over-wave'),
+};
+function show(el){ el.classList.remove('hidden'); }
+function hide(el){ el.classList.add('hidden'); }
+function setState(s){
+  state = s;
+  hide(ui.title); hide(ui.pause); hide(ui.over);
+  if (s === State.TITLE) { ui.titleHigh.textContent = highScore; show(ui.title); }
+  if (s === State.PAUSED) show(ui.pause);
+  if (s === State.OVER) {
+    ui.overScore.textContent = score;
+    ui.overHigh.textContent  = highScore;
+    ui.overWave.textContent  = wave;
+    show(ui.over);
+  }
+}
+
+/* ============================================================
+   PERSISTENCE
+============================================================ */
+let highScore = 0;
+try { highScore = parseInt(localStorage.getItem('gh-invaders-high') || '0', 10) || 0; } catch(_){}
+function saveHigh(){
+  try { localStorage.setItem('gh-invaders-high', String(highScore)); } catch(_){}
+}
+
+/* ============================================================
+   BACKGROUND — contribution-graph grid w/ twinkling commits
+============================================================ */
+const BG_CELL = 18, BG_GAP = 4;
+const bgCols = Math.ceil(W / (BG_CELL + BG_GAP)) + 1;
+const bgRows = Math.ceil(H / (BG_CELL + BG_GAP)) + 1;
+const bgCells = [];
+for (let y=0;y<bgRows;y++)
+  for (let x=0;x<bgCols;x++)
+    bgCells.push({x,y, lvl: Math.random() < 0.08 ? (Math.random()<0.3?2:1) : 0,
+                  twinkle: Math.random()*Math.PI*2});
+
+function drawBackground(t){
+  ctx.fillStyle = T.bg0;
+  ctx.fillRect(0,0,W,H);
+  const shade = ['#0d1f17', '#103925', '#125733']; // dim contribution cells
+  for (const c of bgCells){
+    const px = c.x*(BG_CELL+BG_GAP) - BG_GAP;
+    const py = c.y*(BG_CELL+BG_GAP) - BG_GAP;
+    let lvl = c.lvl;
+    if (lvl > 0){
+      const tw = 0.5 + 0.5*Math.sin(t*0.001 + c.twinkle);
+      ctx.globalAlpha = 0.25 + tw*0.35;
+    } else {
+      ctx.globalAlpha = 0.6;
+    }
+    ctx.fillStyle = shade[lvl];
+    roundRect(px,py,BG_CELL,BG_CELL,3); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+
+/* ============================================================
+   PRIMITIVES
+============================================================ */
+function roundRect(x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);
+  ctx.arcTo(x+w,y,x+w,y+h,r);
+  ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r);
+  ctx.arcTo(x,y,x+w,y,r);
+  ctx.closePath();
+}
+function aabb(a,b){
+  return a.x < b.x+b.w && a.x+a.w > b.x && a.y < b.y+b.h && a.y+a.h > b.y;
+}
+
+/* ============================================================
+   OCTICON-STYLE GLYPHS (drawn from primitives)
+   Each draws inside a (cx,cy) box of size s, in the given color.
+============================================================ */
+const Glyph = {
+  bug(cx,cy,s,color){
+    ctx.strokeStyle = color; ctx.fillStyle = color;
+    ctx.lineWidth = Math.max(1, s*0.08); ctx.lineCap='round';
+    // body
+    ctx.beginPath();
+    ctx.ellipse(cx, cy, s*0.32, s*0.42, 0, 0, Math.PI*2);
+    ctx.fill();
+    // antennae
+    ctx.beginPath();
+    ctx.moveTo(cx-s*0.18, cy-s*0.36); ctx.lineTo(cx-s*0.34, cy-s*0.5);
+    ctx.moveTo(cx+s*0.18, cy-s*0.36); ctx.lineTo(cx+s*0.34, cy-s*0.5);
+    // legs
+    for (let i=-1;i<=1;i++){
+      const yy = cy + i*s*0.18;
+      ctx.moveTo(cx-s*0.32, yy); ctx.lineTo(cx-s*0.5, yy + i*s*0.06);
+      ctx.moveTo(cx+s*0.32, yy); ctx.lineTo(cx+s*0.5, yy + i*s*0.06);
+    }
+    ctx.stroke();
+  },
+  // Octicon sparkle — four-point star with concave (cusped) sides
+  sparkle(cx,cy,s,color){
+    ctx.fillStyle = color;
+    const R = s*0.48, r = s*0.1;
+    ctx.beginPath();
+    // top
+    ctx.moveTo(cx, cy-R);
+    ctx.bezierCurveTo(cx+r, cy-r, cx+r, cy-r, cx+R, cy);
+    // right -> bottom
+    ctx.bezierCurveTo(cx+r, cy+r, cx+r, cy+r, cx, cy+R);
+    // bottom -> left
+    ctx.bezierCurveTo(cx-r, cy+r, cx-r, cy+r, cx-R, cy);
+    // left -> top
+    ctx.bezierCurveTo(cx-r, cy-r, cx-r, cy-r, cx, cy-R);
+    ctx.closePath();
+    ctx.fill();
+  },
+  // Octicon hubot — robot head with antenna + two eyes
+  hubot(cx,cy,s,color){
+    ctx.fillStyle = color; ctx.strokeStyle = color;
+    ctx.lineWidth = Math.max(1, s*0.06); ctx.lineCap = 'round';
+    // antenna
+    ctx.beginPath();
+    ctx.moveTo(cx, cy-s*0.35); ctx.lineTo(cx, cy-s*0.48);
+    ctx.stroke();
+    ctx.beginPath(); ctx.arc(cx, cy-s*0.5, s*0.06, 0, Math.PI*2); ctx.fill();
+    // head
+    roundRect(cx-s*0.36, cy-s*0.32, s*0.72, s*0.62, s*0.1); ctx.fill();
+    // ear bumps
+    ctx.beginPath();
+    ctx.arc(cx-s*0.4, cy, s*0.06, 0, Math.PI*2);
+    ctx.arc(cx+s*0.4, cy, s*0.06, 0, Math.PI*2);
+    ctx.fill();
+    // eyes (knock out)
+    ctx.fillStyle = T.bg1;
+    ctx.fillRect(cx-s*0.22, cy-s*0.16, s*0.14, s*0.1);
+    ctx.fillRect(cx+s*0.08, cy-s*0.16, s*0.14, s*0.1);
+    // mouth grill
+    for (let i=0;i<3;i++){
+      ctx.fillRect(cx-s*0.18 + i*s*0.14, cy+s*0.06, s*0.1, s*0.04);
+    }
+  },
+  // Octicon git-branch — left vertical with two dots, branch curving to top-right dot
+  gitbranch(cx,cy,s,color){
+    ctx.strokeStyle = color; ctx.fillStyle = color;
+    ctx.lineWidth = Math.max(1.5, s*0.09); ctx.lineCap = 'round';
+    const lx = cx - s*0.22, rx = cx + s*0.22;
+    const top = cy - s*0.35, bot = cy + s*0.35;
+    // left vertical
+    ctx.beginPath();
+    ctx.moveTo(lx, top + s*0.08);
+    ctx.lineTo(lx, bot - s*0.08);
+    ctx.stroke();
+    // branch curve from middle-left to top-right
+    ctx.beginPath();
+    ctx.moveTo(lx, cy);
+    ctx.bezierCurveTo(lx, top + s*0.05, rx, cy - s*0.05, rx, top + s*0.08);
+    ctx.stroke();
+    // dots
+    const dot = (x,y) => { ctx.beginPath(); ctx.arc(x,y,s*0.1,0,Math.PI*2); ctx.fill(); };
+    dot(lx, top); dot(lx, bot); dot(rx, top);
+  },
+  // Octicon shield-lock — shield silhouette with keyhole
+  shieldlock(cx,cy,s,color){
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.moveTo(cx-s*0.4, cy-s*0.42);
+    ctx.lineTo(cx+s*0.4, cy-s*0.42);
+    ctx.lineTo(cx+s*0.4, cy);
+    ctx.bezierCurveTo(cx+s*0.4, cy+s*0.3, cx+s*0.2, cy+s*0.45, cx, cy+s*0.5);
+    ctx.bezierCurveTo(cx-s*0.2, cy+s*0.45, cx-s*0.4, cy+s*0.3, cx-s*0.4, cy);
+    ctx.closePath();
+    ctx.fill();
+    // keyhole (knock out)
+    ctx.fillStyle = T.bg1;
+    ctx.beginPath(); ctx.arc(cx, cy-s*0.05, s*0.09, 0, Math.PI*2); ctx.fill();
+    ctx.fillRect(cx-s*0.04, cy-s*0.05, s*0.08, s*0.22);
+  },
+  // Octicon squirrel — chunky body with iconic curled bushy tail
+  squirrel(cx,cy,s,color){
+    ctx.fillStyle = color; ctx.strokeStyle = color;
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    // tail (thick curl behind body, drawn first)
+    ctx.lineWidth = Math.max(2, s*0.22);
+    ctx.beginPath();
+    ctx.moveTo(cx-s*0.05, cy+s*0.25);
+    ctx.bezierCurveTo(cx-s*0.45, cy+s*0.2, cx-s*0.5, cy-s*0.35, cx-s*0.15, cy-s*0.4);
+    ctx.bezierCurveTo(cx+s*0.05, cy-s*0.42, cx+s*0.05, cy-s*0.2, cx-s*0.1, cy-s*0.18);
+    ctx.stroke();
+    // body
+    ctx.beginPath();
+    ctx.ellipse(cx+s*0.12, cy+s*0.12, s*0.22, s*0.28, 0, 0, Math.PI*2);
+    ctx.fill();
+    // head
+    ctx.beginPath();
+    ctx.arc(cx+s*0.22, cy-s*0.1, s*0.16, 0, Math.PI*2);
+    ctx.fill();
+    // ear
+    ctx.beginPath();
+    ctx.moveTo(cx+s*0.16, cy-s*0.24);
+    ctx.lineTo(cx+s*0.22, cy-s*0.34);
+    ctx.lineTo(cx+s*0.28, cy-s*0.24);
+    ctx.closePath(); ctx.fill();
+    // eye (knock out)
+    ctx.fillStyle = T.bg1;
+    ctx.beginPath(); ctx.arc(cx+s*0.27, cy-s*0.1, s*0.03, 0, Math.PI*2); ctx.fill();
+  }
+};
+
+/* Player ship — rocket-octicon-inspired silhouette */
+function drawRocket(cx, cy, s, color, thrustPhase){
+  ctx.fillStyle = color;
+  // body (rounded capsule)
+  ctx.beginPath();
+  ctx.moveTo(cx, cy - s*0.55);
+  ctx.bezierCurveTo(cx+s*0.32, cy-s*0.4, cx+s*0.32, cy+s*0.2, cx+s*0.22, cy+s*0.35);
+  ctx.lineTo(cx-s*0.22, cy+s*0.35);
+  ctx.bezierCurveTo(cx-s*0.32, cy+s*0.2, cx-s*0.32, cy-s*0.4, cx, cy-s*0.55);
+  ctx.closePath();
+  ctx.fill();
+  // window
+  ctx.fillStyle = T.bg1;
+  ctx.beginPath(); ctx.arc(cx, cy-s*0.15, s*0.12, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = T.security;
+  ctx.beginPath(); ctx.arc(cx, cy-s*0.15, s*0.08, 0, Math.PI*2); ctx.fill();
+  // fins
+  ctx.fillStyle = T.greenDeep;
+  ctx.beginPath();
+  ctx.moveTo(cx-s*0.22, cy+s*0.05);
+  ctx.lineTo(cx-s*0.5, cy+s*0.45);
+  ctx.lineTo(cx-s*0.2, cy+s*0.35);
+  ctx.closePath(); ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(cx+s*0.22, cy+s*0.05);
+  ctx.lineTo(cx+s*0.5, cy+s*0.45);
+  ctx.lineTo(cx+s*0.2, cy+s*0.35);
+  ctx.closePath(); ctx.fill();
+  // thrust
+  const t = 0.5 + 0.5*Math.sin(thrustPhase);
+  ctx.fillStyle = T.warn;
+  ctx.beginPath();
+  ctx.moveTo(cx-s*0.12, cy+s*0.36);
+  ctx.lineTo(cx, cy+s*(0.55 + 0.15*t));
+  ctx.lineTo(cx+s*0.12, cy+s*0.36);
+  ctx.closePath(); ctx.fill();
+}
+
+/* Decorative mascot silhouettes for HUD corner — emoji glyphs (cross-platform) */
+function drawHudMascots(){
+  ctx.save();
+  ctx.font = '18px serif';
+  ctx.textBaseline = 'middle';
+  ctx.globalAlpha = 0.85;
+  ctx.fillText('🐙', W - 78, 22);
+  ctx.fillText('🤖', W - 56, 22);
+  ctx.fillText('🦆', W - 34, 22);
+  ctx.restore();
+}
+
+/* ============================================================
+   ENTITIES
+============================================================ */
+const player = {
+  x: W/2 - 22, y: H - 80, w: 44, h: 44,
+  speed: 320, alive: true, invuln: 0, thrust: 0
+};
+
+let bullet = null;            // single player bullet in flight (classic Invaders)
+const enemyBullets = [];      // multiple invader bullets
+const particles = [];
+const bunkers = [];           // each: {x,y,w,h,canvas,ctx}
+let ufo = null;
+let ufoTimer = 6;
+
+let invaders = [];
+let invDir = 1;               // 1 right, -1 left
+let invStepDx = 4;            // px per step
+let invStepDy = 14;
+let invMoveTimer = 0;
+let invMoveInterval = 0.7;    // seconds between steps; shrinks as invaders die
+let invFireTimer = 1.5;
+
+let score = 0, lives = 3, wave = 1;
+let shake = 0, flash = 0;
+
+/* Invader rows: top -> bottom, mapped to contribution-graph shades top=darkest=highest threat */
+const ROWS = 5, COLS = 11;
+const ROW_DEFS = [
+  {color: T.c4, glyph: 'shieldlock', points: 40},
+  {color: T.c3, glyph: 'hubot',      points: 30},
+  {color: T.c3, glyph: 'sparkle',    points: 20},
+  {color: T.c2, glyph: 'gitbranch',  points: 20},
+  {color: T.c1, glyph: 'bug',        points: 10},
+];
+
+function spawnInvaders(){
+  invaders = [];
+  const cellW = 36, cellH = 30;
+  const gridW = COLS*cellW;
+  const startX = (W - gridW)/2;
+  const startY = 90;
+  for (let r=0;r<ROWS;r++){
+    for (let c=0;c<COLS;c++){
+      invaders.push({
+        x: startX + c*cellW + 4,
+        y: startY + r*cellH + 4,
+        w: cellW - 8, h: cellH - 8,
+        row: r, col: c,
+        color: ROW_DEFS[r].color,
+        glyph: ROW_DEFS[r].glyph,
+        points: ROW_DEFS[r].points,
+        alive: true, anim: 0
+      });
+    }
+  }
+  invDir = 1;
+  invMoveInterval = Math.max(0.18, 0.7 - (wave-1)*0.06);
+  invMoveTimer = invMoveInterval;
+  invFireTimer = Math.max(0.4, 1.4 - (wave-1)*0.1);
+}
+
+function spawnBunkers(){
+  bunkers.length = 0;
+  const count = 4;
+  const bw = 70, bh = 44;
+  const gap = (W - count*bw) / (count+1);
+  const by = H - 170;
+  for (let i=0;i<count;i++){
+    const bx = gap + i*(bw+gap);
+    const off = document.createElement('canvas');
+    off.width = bw; off.height = bh;
+    const oc = off.getContext('2d');
+    // PR-merged-badge shape: rounded rect with notch
+    oc.fillStyle = T.c3;
+    oc.beginPath();
+    const r = 8;
+    oc.moveTo(r,0); oc.arcTo(bw,0,bw,bh,r);
+    oc.arcTo(bw,bh,0,bh,r);
+    oc.arcTo(0,bh,0,0,r);
+    oc.arcTo(0,0,bw,0,r);
+    oc.closePath(); oc.fill();
+    // carve a player slot at the bottom-middle
+    oc.globalCompositeOperation = 'destination-out';
+    oc.beginPath();
+    oc.moveTo(bw*0.3, bh);
+    oc.lineTo(bw*0.5, bh*0.5);
+    oc.lineTo(bw*0.7, bh);
+    oc.closePath(); oc.fill();
+    oc.globalCompositeOperation = 'source-over';
+    bunkers.push({x:bx, y:by, w:bw, h:bh, canvas:off, ctx:oc});
+  }
+}
+
+function erodeBunker(b, hx, hy, radius){
+  b.ctx.save();
+  b.ctx.globalCompositeOperation = 'destination-out';
+  // rough crater with a few overlapping circles for organic erosion
+  for (let i=0;i<4;i++){
+    const a = Math.random()*Math.PI*2;
+    const d = Math.random()*radius*0.6;
+    const r = radius * (0.6 + Math.random()*0.6);
+    b.ctx.beginPath();
+    b.ctx.arc(hx + Math.cos(a)*d, hy + Math.sin(a)*d, r, 0, Math.PI*2);
+    b.ctx.fill();
+  }
+  b.ctx.restore();
+}
+function bunkerHasPixel(b, lx, ly){
+  if (lx<0||ly<0||lx>=b.w||ly>=b.h) return false;
+  const d = b.ctx.getImageData(lx|0, ly|0, 1, 1).data;
+  return d[3] > 32;
+}
+
+/* ============================================================
+   SPAWNING / RESET
+============================================================ */
+function newGame(){
+  score = 0; lives = 3; wave = 1;
+  player.x = W/2 - player.w/2; player.alive = true; player.invuln = 0;
+  bullet = null;
+  enemyBullets.length = 0;
+  particles.length = 0;
+  ufo = null; ufoTimer = 6;
+  shake = 0; flash = 0;
+  spawnInvaders();
+  spawnBunkers();
+}
+function nextWave(){
+  wave++;
+  bullet = null;
+  enemyBullets.length = 0;
+  spawnInvaders();
+  // bunkers regenerate every 3 waves for breathing room
+  if (wave % 3 === 1) spawnBunkers();
+  flash = 0.4;
+}
+
+/* ============================================================
+   UPDATE
+============================================================ */
+function fireBullet(){
+  if (bullet) return;
+  bullet = { x: player.x + player.w/2 - 2, y: player.y - 6, w: 4, h: 12, vy: -640 };
+}
+function enemyFire(shooter){
+  enemyBullets.push({
+    x: shooter.x + shooter.w/2 - 3, y: shooter.y + shooter.h, w: 6, h: 12, vy: 200 + wave*15,
+    color: shooter.color
+  });
+}
+
+function update(dt, t){
+  if (state !== State.PLAYING) return;
+
+  // Player movement
+  if (player.alive){
+    let vx = 0;
+    if (keys['ArrowLeft'] || keys['a'] || keys['A']) vx -= 1;
+    if (keys['ArrowRight']|| keys['d'] || keys['D']) vx += 1;
+    player.x += vx * player.speed * dt;
+    player.x = Math.max(8, Math.min(W - player.w - 8, player.x));
+    player.thrust += dt*20;
+    if (consume(' ')) fireBullet();
+    if (player.invuln > 0) player.invuln -= dt;
+  } else {
+    player.respawn -= dt;
+    if (player.respawn <= 0){
+      if (lives > 0){
+        player.alive = true; player.invuln = 2;
+        player.x = W/2 - player.w/2;
+      } else {
+        endGame();
+      }
+    }
+  }
+
+  // Player bullet
+  if (bullet){
+    bullet.y += bullet.vy * dt;
+    if (bullet.y + bullet.h < 0) bullet = null;
+  }
+
+  // Enemy bullets
+  for (let i=enemyBullets.length-1;i>=0;i--){
+    const b = enemyBullets[i];
+    b.y += b.vy * dt;
+    if (b.y > H) enemyBullets.splice(i,1);
+  }
+
+  // Invader formation step
+  invMoveTimer -= dt;
+  if (invMoveTimer <= 0){
+    const aliveInv = invaders.filter(i => i.alive);
+    let edge = false;
+    for (const inv of aliveInv){
+      inv.x += invDir * invStepDx;
+      inv.anim ^= 1;
+      if (inv.x < 8 || inv.x + inv.w > W - 8) edge = true;
+    }
+    if (edge){
+      invDir *= -1;
+      for (const inv of aliveInv){
+        inv.x += invDir * invStepDx; // un-cross the edge
+        inv.y += invStepDy;
+      }
+    }
+    // speed scales with remaining invaders
+    const ratio = aliveInv.length / (ROWS*COLS);
+    const base = Math.max(0.18, 0.7 - (wave-1)*0.06);
+    invMoveInterval = Math.max(0.06, base * (0.25 + 0.75*ratio));
+    invMoveTimer = invMoveInterval;
+  }
+
+  // Invader fire (random bottom-of-column shooter)
+  invFireTimer -= dt;
+  if (invFireTimer <= 0){
+    const cols = {};
+    for (const inv of invaders) if (inv.alive){
+      if (!cols[inv.col] || inv.y > cols[inv.col].y) cols[inv.col] = inv;
+    }
+    const shooters = Object.values(cols);
+    if (shooters.length){
+      const s = shooters[(Math.random()*shooters.length)|0];
+      enemyFire(s);
+    }
+    invFireTimer = Math.max(0.25, 1.3 - wave*0.08) * (0.6 + Math.random()*0.8);
+  }
+
+  // UFO
+  ufoTimer -= dt;
+  if (!ufo && ufoTimer <= 0){
+    const fromLeft = Math.random() < 0.5;
+    ufo = {
+      x: fromLeft ? -50 : W+50, y: 50, w: 50, h: 22,
+      vx: (fromLeft ? 1 : -1) * 140,
+      points: 100 + (Math.floor(Math.random()*3))*100
+    };
+    ufoTimer = 8 + Math.random()*8;
+  }
+  if (ufo){
+    ufo.x += ufo.vx * dt;
+    if (ufo.x < -80 || ufo.x > W+80) ufo = null;
+  }
+
+  // Collisions
+  // player bullet -> invaders
+  if (bullet){
+    for (const inv of invaders){
+      if (!inv.alive) continue;
+      if (aabb(bullet, inv)){
+        inv.alive = false;
+        score += inv.points;
+        burst(inv.x+inv.w/2, inv.y+inv.h/2, inv.color, 14);
+        bullet = null;
+        break;
+      }
+    }
+  }
+  // player bullet -> ufo
+  if (bullet && ufo && aabb(bullet, ufo)){
+    score += ufo.points;
+    burst(ufo.x+ufo.w/2, ufo.y+ufo.h/2, T.warn, 22);
+    ufo = null; bullet = null;
+  }
+  // player bullet -> bunker
+  if (bullet){
+    for (const b of bunkers){
+      if (aabb(bullet, b)){
+        const lx = bullet.x + bullet.w/2 - b.x;
+        const ly = bullet.y - b.y;
+        if (bunkerHasPixel(b, lx, ly)){
+          erodeBunker(b, lx, ly, 6);
+          bullet = null;
+          break;
+        }
+      }
+    }
+  }
+  // enemy bullets -> bunker
+  for (let i=enemyBullets.length-1;i>=0;i--){
+    const eb = enemyBullets[i];
+    let consumed = false;
+    for (const b of bunkers){
+      if (aabb(eb, b)){
+        const lx = eb.x + eb.w/2 - b.x;
+        const ly = eb.y + eb.h - b.y;
+        if (bunkerHasPixel(b, lx, ly)){
+          erodeBunker(b, lx, ly, 7);
+          consumed = true; break;
+        }
+      }
+    }
+    if (consumed){ enemyBullets.splice(i,1); continue; }
+    // enemy bullets -> player
+    if (player.alive && player.invuln <= 0 && aabb(eb, player)){
+      enemyBullets.splice(i,1);
+      killPlayer();
+    }
+  }
+
+  // Invader contact / reach line — instant, unconditional game over
+  let reached = false;
+  for (const inv of invaders){
+    if (inv.alive && inv.y + inv.h >= player.y){ reached = true; break; }
+  }
+  if (reached){
+    burst(player.x+player.w/2, player.y+player.h/2, T.danger, 40);
+    lives = 0;
+    player.alive = false;
+    shake = 18; flash = 0.4;
+    endGame();
+    return;
+  }
+
+  // Wave clear (only meaningful if game is still in PLAYING)
+  if (state === State.PLAYING && invaders.every(i => !i.alive)){
+    nextWave();
+  }
+
+  // Particles
+  for (let i=particles.length-1;i>=0;i--){
+    const p = particles[i];
+    p.life -= dt;
+    if (p.life <= 0){ particles.splice(i,1); continue; }
+    p.x += p.vx*dt; p.y += p.vy*dt;
+    p.vy += 200*dt;
+  }
+
+  if (shake > 0) shake -= dt*60;
+  if (flash > 0) flash -= dt;
+}
+
+function burst(x,y,color,n){
+  for (let i=0;i<n;i++){
+    const a = Math.random()*Math.PI*2;
+    const sp = 60 + Math.random()*180;
+    particles.push({
+      x,y, vx:Math.cos(a)*sp, vy:Math.sin(a)*sp - 40,
+      life: 0.4 + Math.random()*0.5, color, size: 2 + Math.random()*2
+    });
+  }
+}
+function killPlayer(){
+  if (!player.alive) return;
+  burst(player.x+player.w/2, player.y+player.h/2, T.warn, 30);
+  player.alive = false;
+  player.respawn = 1.2;
+  lives--;
+  shake = 14; flash = 0.25;
+  if (lives < 0){ endGame(); }
+}
+function endGame(){
+  if (score > highScore){ highScore = score; saveHigh(); }
+  setState(State.OVER);
+}
+
+/* ============================================================
+   RENDER
+============================================================ */
+function drawInvader(inv, t){
+  // Contribution-cell square + inner glyph; tiny bob keeps them lively
+  const bob = (inv.anim ? 1 : -1) * 1.5;
+  const x = inv.x, y = inv.y + bob, w = inv.w, h = inv.h;
+  // cell
+  ctx.fillStyle = inv.color;
+  roundRect(x, y, w, h, 4); ctx.fill();
+  // inner darker rim
+  ctx.strokeStyle = 'rgba(0,0,0,0.25)';
+  ctx.lineWidth = 1;
+  roundRect(x+0.5, y+0.5, w-1, h-1, 4); ctx.stroke();
+  // glyph (drawn in dark green for contrast)
+  const cx = x + w/2, cy = y + h/2;
+  const gColor = (inv.color === T.c1 || inv.color === T.c2) ? T.bg1 : T.c1;
+  Glyph[inv.glyph](cx, cy, Math.min(w,h), gColor);
+}
+
+function drawBullet(b, color){
+  ctx.fillStyle = color;
+  roundRect(b.x, b.y, b.w, b.h, 2); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,0.5)';
+  ctx.fillRect(b.x+1, b.y+1, 1, b.h-2);
+}
+
+function drawUFO(u){
+  // boss = squirrel, larger, with copilot-purple glow
+  ctx.save();
+  ctx.translate(u.x, u.y);
+  ctx.shadowColor = T.copilot; ctx.shadowBlur = 14;
+  Glyph.squirrel(u.w/2, u.h/2, u.h*1.6, T.copilot);
+  ctx.restore();
+}
+
+function drawBunkers(){
+  for (const b of bunkers){
+    ctx.drawImage(b.canvas, b.x, b.y);
+  }
+}
+
+function drawHud(){
+  ctx.save();
+  // top bar background strip
+  ctx.fillStyle = 'rgba(16,20,17,0.55)';
+  ctx.fillRect(0,0,W,40);
+  ctx.fillStyle = T.g4; ctx.font = 'bold 11px ui-monospace,monospace';
+  ctx.textBaseline = 'top';
+  ctx.fillText('SCORE',  16, 6);
+  ctx.fillText('HIGH',  150, 6);
+  ctx.fillText('WAVE',  260, 6);
+  ctx.fillText('LIVES', 340, 6);
+  ctx.fillStyle = T.green; ctx.font = 'bold 18px ui-monospace,monospace';
+  ctx.fillText(String(score).padStart(5,'0'),  16, 18);
+  ctx.fillStyle = T.c2;
+  ctx.fillText(String(highScore).padStart(5,'0'),150, 18);
+  ctx.fillStyle = T.g1;
+  ctx.fillText(String(wave), 260, 18);
+  // lives as small rocket icons
+  for (let i=0;i<Math.max(0,lives);i++){
+    drawRocket(355 + i*22, 28, 18, T.green, 0);
+  }
+  drawHudMascots();
+  ctx.restore();
+}
+
+function render(t){
+  ctx.save();
+  // screen shake
+  if (shake > 0){
+    const s = shake;
+    ctx.translate((Math.random()-0.5)*s, (Math.random()-0.5)*s);
+  }
+  drawBackground(t);
+
+  // invaders
+  for (const inv of invaders) if (inv.alive) drawInvader(inv, t);
+
+  // bunkers
+  drawBunkers();
+
+  // UFO
+  if (ufo) drawUFO(ufo);
+
+  // player
+  if (player.alive){
+    if (player.invuln > 0 && Math.floor(t/80)%2===0){
+      ctx.globalAlpha = 0.4;
+    }
+    drawRocket(player.x + player.w/2, player.y + player.h/2, player.w, T.green, player.thrust);
+    ctx.globalAlpha = 1;
+  }
+
+  // bullets
+  if (bullet) drawBullet(bullet, T.c4);
+  for (const eb of enemyBullets) drawBullet(eb, eb.color || T.warn);
+
+  // particles
+  for (const p of particles){
+    ctx.globalAlpha = Math.max(0, p.life);
+    ctx.fillStyle = p.color;
+    ctx.fillRect(p.x, p.y, p.size, p.size);
+  }
+  ctx.globalAlpha = 1;
+
+  // HUD
+  drawHud();
+
+  // wave-clear flash
+  if (flash > 0){
+    ctx.fillStyle = `rgba(15,191,62,${flash*0.35})`;
+    ctx.fillRect(0,0,W,H);
+  }
+  ctx.restore();
+}
+
+/* ============================================================
+   STATE TRANSITIONS via keys
+============================================================ */
+function handleStateInput(){
+  if (state === State.TITLE){
+    if (consume('Enter')){
+      newGame();
+      setState(State.PLAYING);
+    }
+  } else if (state === State.PLAYING){
+    if (consume('p') || consume('P') || consume('Escape')){
+      setState(State.PAUSED);
+    }
+  } else if (state === State.PAUSED){
+    if (consume('p') || consume('P') || consume('Escape')){
+      setState(State.PLAYING);
+    }
+  } else if (state === State.OVER){
+    if (consume('Enter')){
+      newGame();
+      setState(State.PLAYING);
+    }
+  }
+}
+
+/* ============================================================
+   MAIN LOOP — fixed timestep
+============================================================ */
+let last = performance.now(), acc = 0;
+const STEP = 1/120;
+function loop(now){
+  const dt = Math.min(0.1, (now - last)/1000);
+  last = now;
+  handleStateInput();
+  acc += dt;
+  while (acc >= STEP){
+    update(STEP, now);
+    acc -= STEP;
+  }
+  render(now);
+  requestAnimationFrame(loop);
+}
+
+setState(State.TITLE);
+requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>

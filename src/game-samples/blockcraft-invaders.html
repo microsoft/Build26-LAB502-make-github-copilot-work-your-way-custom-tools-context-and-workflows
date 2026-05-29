@@ -1,0 +1,1775 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Blockcraft Invaders</title>
+  <style>
+    /* Global theme tokens shared by the chrome, HUD, and canvas framing. */
+    :root {
+      --bg: #0f1318;
+      --panel: #1f2a1b;
+      --panel-edge: #395125;
+      --panel-glow: #89c767;
+      --accent: #4caf50;
+      --accent-2: #76d164;
+      --lava: #ff7a18;
+      --diamond: #65e7ff;
+      --redstone: #ff4355;
+      --gold: #f8d45c;
+      --ink: #091208;
+      --paper: #e3f0d6;
+      --shadow: rgba(0, 0, 0, 0.35);
+    }
+
+    /* Base resets keep the single-file layout predictable across browsers. */
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      overflow: hidden;
+      color: var(--paper);
+      font-family: Impact, Haettenschweiler, "Arial Black", "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at top, rgba(101, 231, 255, 0.16), transparent 30%),
+        radial-gradient(circle at bottom right, rgba(255, 122, 24, 0.16), transparent 30%),
+        linear-gradient(180deg, #1a2230 0%, #11181c 45%, #090c10 100%);
+      letter-spacing: 0.04em;
+    }
+
+    body::before,
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0.12;
+    }
+
+    body::before {
+      background:
+        linear-gradient(90deg, transparent 49%, rgba(255, 255, 255, 0.08) 50%, transparent 51%) 0 0 / 22px 22px,
+        linear-gradient(transparent 49%, rgba(255, 255, 255, 0.08) 50%, transparent 51%) 0 0 / 22px 22px;
+    }
+
+    body::after {
+      background:
+        radial-gradient(circle at 10% 20%, rgba(255,255,255,0.9) 0 1px, transparent 2px),
+        radial-gradient(circle at 30% 70%, rgba(255,255,255,0.9) 0 1px, transparent 2px),
+        radial-gradient(circle at 75% 35%, rgba(255,255,255,0.7) 0 1.5px, transparent 2.5px),
+        radial-gradient(circle at 90% 15%, rgba(255,255,255,0.7) 0 1.5px, transparent 2.5px);
+    }
+
+    /* The shell holds the briefing panel, game arena, and controls sidebar. */
+    .shell {
+      width: min(1120px, 100%);
+      display: grid;
+      grid-template-columns: minmax(240px, 300px) minmax(0, 1fr) minmax(220px, 280px);
+      gap: 18px;
+      align-items: start;
+    }
+
+    /* Shared block styling for the two informational side panels. */
+    .panel {
+      background: linear-gradient(180deg, rgba(39, 52, 35, 0.95), rgba(20, 31, 20, 0.95));
+      border: 4px solid var(--panel-edge);
+      box-shadow:
+        inset 0 0 0 4px #0d140d,
+        0 16px 30px var(--shadow),
+        0 0 20px rgba(137, 199, 103, 0.18);
+      padding: 16px;
+      position: relative;
+    }
+
+    .panel::before {
+      content: "";
+      position: absolute;
+      inset: 6px;
+      border: 2px dashed rgba(227, 240, 214, 0.18);
+      pointer-events: none;
+    }
+
+    .title {
+      font-size: clamp(2rem, 4vw, 3.25rem);
+      line-height: 0.92;
+      margin: 0 0 10px;
+      text-transform: uppercase;
+      color: #b9ff90;
+      text-shadow:
+        0 4px 0 #0d1b08,
+        0 0 18px rgba(137, 199, 103, 0.35);
+    }
+
+    .subtitle {
+      margin: 0 0 16px;
+      color: #d6ffb8;
+      font-size: 0.95rem;
+    }
+
+    .icon-row,
+    .legend,
+    .controls {
+      display: grid;
+      gap: 10px;
+    }
+
+    .icon-row {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      margin-bottom: 18px;
+    }
+
+    .gem {
+      min-height: 72px;
+      display: grid;
+      place-items: center;
+      font-size: 1.8rem;
+      background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(0,0,0,0.18));
+      border: 3px solid #223018;
+      box-shadow: inset 0 -4px 0 rgba(0,0,0,0.3);
+    }
+
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .stat-card {
+      background: rgba(10, 19, 10, 0.68);
+      border: 3px solid #26371c;
+      padding: 10px;
+      min-height: 82px;
+      display: grid;
+      align-content: center;
+      gap: 4px;
+    }
+
+    .stat-label {
+      font-size: 0.76rem;
+      color: #a2c88a;
+    }
+
+    .stat-value {
+      font-size: 1.4rem;
+      color: #fff5a5;
+      text-shadow: 0 2px 0 #332500;
+    }
+
+    .legend-item,
+    .control-item {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 10px;
+      align-items: start;
+      background: rgba(9, 17, 9, 0.55);
+      border: 2px solid #25361d;
+      padding: 10px;
+    }
+
+    .legend-icon,
+    .control-icon {
+      width: 42px;
+      height: 42px;
+      display: grid;
+      place-items: center;
+      background: rgba(0,0,0,0.25);
+      border: 2px solid #3d5b2a;
+      font-size: 1.25rem;
+    }
+
+    .section-heading {
+      margin: 0 0 10px;
+      font-size: 1rem;
+      color: #afff76;
+      text-transform: uppercase;
+    }
+
+    /* The central arena frames the canvas and the runtime controls. */
+    .arena {
+      position: relative;
+      padding: 14px;
+      background:
+        linear-gradient(180deg, rgba(0,0,0,0.12), rgba(255,255,255,0.04)),
+        linear-gradient(180deg, rgba(40, 62, 41, 0.95), rgba(17, 24, 19, 0.95));
+      border: 4px solid #496534;
+      box-shadow:
+        inset 0 0 0 4px #0f160f,
+        0 18px 30px rgba(0,0,0,0.45),
+        0 0 25px rgba(101, 231, 255, 0.15);
+    }
+
+    .arena-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 10px;
+      color: #c4f8b4;
+      font-size: 0.9rem;
+    }
+
+    canvas {
+      width: 100%;
+      height: auto;
+      display: block;
+      border: 4px solid #182314;
+      background:
+        linear-gradient(180deg, #6ec8ff 0%, #3e7dd4 28%, #203e6c 29%, #0f1a2f 100%);
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+    }
+
+    .hud-footer {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+      font-size: 0.85rem;
+      color: #d7f1d0;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border: 2px solid #29401c;
+      background: rgba(9, 17, 9, 0.6);
+    }
+
+    .toggle-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 14px;
+    }
+
+    button {
+      appearance: none;
+      border: 3px solid #355021;
+      background: linear-gradient(180deg, #7fcf56, #4b8f2d);
+      color: #091208;
+      padding: 10px 14px;
+      font: inherit;
+      text-transform: uppercase;
+      cursor: pointer;
+      box-shadow: inset 0 -4px 0 rgba(0,0,0,0.25);
+    }
+
+    button.secondary {
+      background: linear-gradient(180deg, #72daf5, #3899c1);
+    }
+
+    button.alert {
+      background: linear-gradient(180deg, #ffc85e, #ff8737);
+    }
+
+    button:active {
+      transform: translateY(2px);
+      box-shadow: inset 0 -2px 0 rgba(0,0,0,0.25);
+    }
+
+    .sr {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    /* Touch control pad shown on mobile / touch-primary devices. */
+    .touch-controls {
+      display: none;
+      gap: 10px;
+      margin-top: 14px;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .touch-btn {
+      min-width: 100px;
+      min-height: 72px;
+      font-size: 1.6rem;
+      touch-action: none;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    .touch-btn.touch-fire {
+      min-width: 120px;
+      background: linear-gradient(180deg, #ffd45c, #c8970a);
+      border-color: #7a5a00;
+    }
+
+    /* Collapse to a single column once the three-panel layout becomes cramped. */
+    @media (max-width: 980px) {
+      body {
+        overflow-y: auto;
+        align-items: flex-start;
+      }
+      .shell {
+        grid-template-columns: 1fr;
+      }
+      .arena {
+        order: -1;
+      }
+      .touch-controls {
+        display: flex;
+      }
+    }
+
+    /* Also surface touch controls on any touch-primary device regardless of width. */
+    @media (hover: none) and (pointer: coarse) {
+      .touch-controls {
+        display: flex;
+      }
+    }
+
+    .footer {
+      position: fixed;
+      bottom: 12px;
+      right: 16px;
+      font-size: 0.75rem;
+      color: #8fb37a;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+      opacity: 0.75;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <!-- Left sidebar: static lore, save-state stats, and enemy roster. -->
+    <section class="panel">
+      <h1 class="title">Blockcraft<br>Invaders</h1>
+      <p class="subtitle">A colorful Minecraft-flavored Space Invaders raid across the Overworld sky.</p>
+      <div class="icon-row" aria-hidden="true">
+        <div class="gem" style="color:#7dff77;">⛏️</div>
+        <div class="gem" style="color:#65e7ff;">💎</div>
+        <div class="gem" style="color:#ffc857;">🧱</div>
+        <div class="gem" style="color:#ff7a18;">🔥</div>
+      </div>
+      <div class="stat-grid">
+        <div class="stat-card"><span class="stat-label">High Score</span><strong class="stat-value" id="highScore">0</strong></div>
+        <div class="stat-card"><span class="stat-label">Best Level</span><strong class="stat-value" id="bestLevel">1</strong></div>
+        <div class="stat-card"><span class="stat-label">Sound</span><strong class="stat-value" id="audioState">Ready</strong></div>
+        <div class="stat-card"><span class="stat-label">Effects</span><strong class="stat-value" id="effectState">On</strong></div>
+      </div>
+      <h2 class="section-heading">Mob Codex</h2>
+      <div class="legend">
+        <div class="legend-item"><div class="legend-icon">💚</div><div><strong>Creepers</strong><br><span>Basic raiders with quick numbers.</span></div></div>
+        <div class="legend-item"><div class="legend-icon">🟪</div><div><strong>Endermen</strong><br><span>Fast shooters with extra score.</span></div></div>
+        <div class="legend-item"><div class="legend-icon">🟨</div><div><strong>Blazes</strong><br><span>Heavy attackers that pressure shields.</span></div></div>
+        <div class="legend-item"><div class="legend-icon">🟩</div><div><strong>Slimes</strong><br><span>Drop booster cubes and health stew.</span></div></div>
+      </div>
+    </section>
+
+    <!-- Center column: active playfield, status text, and primary runtime controls. -->
+    <section class="arena">
+      <div class="arena-header">
+        <div>🧊 Overworld Defense Grid</div>
+        <div id="statusText">Press Start to defend the village.</div>
+      </div>
+      <canvas id="game" width="960" height="720" aria-label="Blockcraft Invaders game canvas"></canvas>
+      <div class="hud-footer">
+        <span class="badge">🎯 <span id="hudObjective">Clear all raiders</span></span>
+        <span class="badge">⌨️ Hold arrows to strafe continuously</span>
+        <span class="badge">⏸️ P pause / M mute / L effects</span>
+      </div>
+      <div class="toggle-row">
+        <button id="startButton">Start Raid</button>
+        <button class="secondary" id="pauseButton">Pause</button>
+        <button class="secondary" id="muteButton">Mute</button>
+        <button class="alert" id="restartButton">Restart</button>
+      </div>
+      <div class="touch-controls" id="touchControls">
+        <button class="touch-btn" id="touchLeft" aria-label="Move left">&#9664;</button>
+        <button class="touch-btn touch-fire" id="touchFire" aria-label="Fire">&#127993; FIRE</button>
+        <button class="touch-btn" id="touchRight" aria-label="Move right">&#9654;</button>
+      </div>
+    </section>
+
+    <!-- Right sidebar: input help and a plain-language feature summary. -->
+    <aside class="panel">
+      <h2 class="section-heading">Controls</h2>
+      <div class="controls">
+        <div class="control-item"><div class="control-icon">⬅️</div><div><strong>Arrow Left / A</strong><br><span>Hold to move left continuously.</span></div></div>
+        <div class="control-item"><div class="control-icon">➡️</div><div><strong>Arrow Right / D</strong><br><span>Hold to move right continuously.</span></div></div>
+        <div class="control-item"><div class="control-icon">🏹</div><div><strong>Space</strong><br><span>Fire arrows. Collect power-ups for a faster volley.</span></div></div>
+        <div class="control-item"><div class="control-icon">⏸️</div><div><strong>P</strong><br><span>Pause or resume the battle.</span></div></div>
+      </div>
+      <h2 class="section-heading" style="margin-top:18px;">Complete Features</h2>
+      <div class="legend">
+        <div class="legend-item"><div class="legend-icon">❤️</div><div>Lives, hit flash, shielded base wall, and health pickups.</div></div>
+        <div class="legend-item"><div class="legend-icon">🚀</div><div>Level progression, enemy speed scaling, boss-like late waves, and victory finale.</div></div>
+        <div class="legend-item"><div class="legend-icon">🎵</div><div>Adaptive chiptune-style soundtrack plus arcade sound effects.</div></div>
+        <div class="legend-item"><div class="legend-icon">✨</div><div>Particles, screen shake, flashing alerts, local best-score memory, and reduced-effects toggle.</div></div>
+      </div>
+      <p class="subtitle" style="margin-top:16px;">Protect the village wall. If raiders touch the ground or your hearts run out, the invasion wins.</p>
+    </aside>
+  </main>
+
+  <!-- Decorative footer stamp for the event build this prototype was created for. -->
+  <div class="footer">Made at Microsoft Build 2026</div>
+
+  <!-- Screen-reader-only live region for status changes that are not otherwise spoken. -->
+  <div aria-live="polite" class="sr" id="announcer"></div>
+
+  <script>
+    /**
+     * Blockcraft Invaders is a self-contained arcade game implemented entirely in one HTML file.
+     *
+     * The script is organized around a small mutable runtime state object, a requestAnimationFrame
+     * loop, and a set of pure-ish helpers that create or update the current wave. The DOM outside
+     * the canvas acts as a lightweight control surface and scoreboard, while the canvas renderer is
+     * responsible for the actual game presentation.
+     *
+     * Major responsibilities in this module:
+     * - bootstrap DOM references and immutable playfield constants
+     * - persist lightweight save data in localStorage
+     * - synthesize simple audio with the Web Audio API when available
+     * - update gameplay systems in a fixed per-frame sequence
+     * - render the Minecraft-themed world, actors, HUD, and overlays
+     * - translate keyboard and button input into runtime state transitions
+     *
+     * The code intentionally assumes a modern browser with canvas and requestAnimationFrame
+     * support. If the Web Audio API is unavailable, gameplay still runs and the UI is updated to
+     * reflect that sound is unsupported.
+     */
+    (() => {
+      /**
+       * @typedef {{highScore: number, bestLevel: number}} SaveData
+       * Lightweight persisted progress stored in localStorage between runs.
+       */
+
+      /**
+       * @typedef {{x: number, y: number, width: number, height: number, speed: number, cooldown: number, hitFlash: number, turretBob: number}} Player
+       * The player's cart-like launcher, including animation and fire-rate state.
+       */
+
+      /**
+       * @typedef {{x: number, y: number, size: number, hp: number}} ShieldBlock
+       * One destructible voxel inside a protective village wall segment.
+       */
+
+      /**
+       * @typedef {{blocks: ShieldBlock[]}} Shield
+       * A grouped cluster of shield blocks that absorbs incoming fire.
+       */
+
+      /**
+       * @typedef {{x: number, y: number, width: number, height: number, type: string, color: string, accent: string, icon: string, score: number, fireRate: number, hp: number, wobble: number}} Enemy
+       * A single invading mob in the current wave.
+       */
+
+      /**
+       * @typedef {{x: number, y: number, width: number, height: number, speed: number, color: string, hit?: boolean}} Projectile
+       * Shared rectangle model for both player and enemy shots.
+       */
+
+      /**
+       * @typedef {{x: number, y: number, vx: number, vy: number, life: number, size: number, color: string}} Particle
+       * Short-lived visual debris used for hits, breaks, and pickups.
+       */
+
+      /**
+       * @typedef {{x: number, y: number, width: number, height: number, speed: number, type: string, color: string, icon: string, duration: number, spin?: number, hit?: boolean}} Powerup
+       * A falling collectible that temporarily or permanently boosts the player.
+       */
+
+      /**
+       * @typedef {{mode: string, score: number, level: number, lives: number, combo: number, elapsed: number, messageTimer: number, message: string, player: Player | null, playerBullets: Projectile[], enemyBullets: Projectile[], particles: Particle[], enemies: Enemy[], powerups: Powerup[], shields: Shield[], shake: number, enemyDirection: number, enemyStepTimer: number, enemyFireTimer: number, autoShootCooldown: number, powerShotTimer: number, rapidShotTimer: number, waveIntro: number, raidCleared: boolean}} GameState
+       * Central mutable snapshot for the current run. Most helpers update this object in place.
+       */
+
+      // DOM bindings expose the non-canvas HUD, buttons, and accessibility hooks.
+      const canvas = document.getElementById("game");
+      const ctx = canvas.getContext("2d");
+      const statusText = document.getElementById("statusText");
+      const objectiveText = document.getElementById("hudObjective");
+      const startButton = document.getElementById("startButton");
+      const pauseButton = document.getElementById("pauseButton");
+      const muteButton = document.getElementById("muteButton");
+      const restartButton = document.getElementById("restartButton");
+      const announcer = document.getElementById("announcer");
+      const highScoreEl = document.getElementById("highScore");
+      const bestLevelEl = document.getElementById("bestLevel");
+      const audioStateEl = document.getElementById("audioState");
+      const effectStateEl = document.getElementById("effectState");
+
+      // Immutable playfield dimensions derived from the canvas backing size.
+      const WIDTH = canvas.width;
+      const HEIGHT = canvas.height;
+      const GROUND_Y = HEIGHT - 86;
+      const PLAYER_Y = HEIGHT - 116;
+      const MAX_LEVEL = 5;
+      const STORAGE_KEY = "blockcraft-invaders-save";
+
+      // Shared colors keep sprite drawing and HUD accents visually consistent.
+      const palette = {
+        grass: "#66bb45",
+        darkGrass: "#2f6e1f",
+        bark: "#8b5a2b",
+        stone: "#8d99a2",
+        diamond: "#65e7ff",
+        lava: "#ff7a18",
+        redstone: "#ff4355",
+        gold: "#f8d45c",
+        void: "#0d1320",
+        sky: "#70c4ff"
+      };
+
+      // Input state and starfield data persist across frames and are updated incrementally.
+      const keys = new Set();
+      const justPressed = new Set();
+      const stars = Array.from({ length: 40 }, () => ({
+        x: Math.random() * WIDTH,
+        y: Math.random() * (HEIGHT * 0.6),
+        size: Math.random() * 2 + 1,
+        speed: Math.random() * 4 + 2
+      }));
+
+      /** @type {SaveData} */
+      const saveData = (() => {
+        try {
+          return JSON.parse(localStorage.getItem(STORAGE_KEY)) || { highScore: 0, bestLevel: 1 };
+        } catch {
+          return { highScore: 0, bestLevel: 1 };
+        }
+      })();
+
+      // Audio state is initialized lazily so browsers can honor user-gesture requirements.
+      let audioCtx = null;
+      let audioEnabled = true;
+      let effectsEnabled = true;
+      let musicClock = 0;
+      let musicStep = 0;
+      let lastTime = 0;
+
+      /** @type {GameState} */
+      const state = {
+        mode: "start",
+        score: 0,
+        level: 1,
+        lives: 3,
+        combo: 0,
+        elapsed: 0,
+        messageTimer: 0,
+        message: "",
+        player: null,
+        playerBullets: [],
+        enemyBullets: [],
+        particles: [],
+        enemies: [],
+        powerups: [],
+        shields: [],
+        shake: 0,
+        enemyDirection: 1,
+        enemyStepTimer: 0,
+        enemyFireTimer: 0,
+        autoShootCooldown: 0,
+        powerShotTimer: 0,
+        rapidShotTimer: 0,
+        waveIntro: 0,
+        raidCleared: false
+      };
+
+      /**
+       * Synchronizes meta-stat cards that live outside the canvas.
+       *
+       * This is intentionally separate from the in-canvas HUD so the surrounding interface stays
+       * accurate even while the game is paused, muted, or sitting on the start screen.
+       *
+       * @returns {void}
+       */
+      function updateMetaUI() {
+        highScoreEl.textContent = String(saveData.highScore || 0);
+        bestLevelEl.textContent = String(saveData.bestLevel || 1);
+        audioStateEl.textContent = audioEnabled ? (audioCtx ? "Live" : "Ready") : "Muted";
+        effectStateEl.textContent = effectsEnabled ? "On" : "Low";
+      }
+
+      /**
+       * Persists the best-known score and deepest cleared level for future sessions.
+       *
+       * The save format is intentionally tiny because it only tracks durable accomplishments, not
+       * a resumable mid-run state.
+       *
+       * @returns {void}
+       */
+      function persistSave() {
+        saveData.highScore = Math.max(saveData.highScore || 0, state.score);
+        saveData.bestLevel = Math.max(saveData.bestLevel || 1, state.level);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(saveData));
+        updateMetaUI();
+      }
+
+      /**
+       * Pushes the latest status message into the screen-reader live region.
+       *
+       * @param {string} text - Human-readable game status that should be announced politely.
+       * @returns {void}
+       */
+      function announce(text) {
+        announcer.textContent = text;
+      }
+
+      /**
+       * Updates the visible status line, optional objective badge, and assistive announcement.
+       *
+       * @param {string} text - Primary status message shown above the canvas.
+       * @param {string | null} [objective=null] - Optional objective text for the HUD footer.
+       * @returns {void}
+       */
+      function setStatus(text, objective = null) {
+        statusText.textContent = text;
+        if (objective) {
+          objectiveText.textContent = objective;
+        }
+        announce(text);
+      }
+
+      /**
+       * Lazily creates the AudioContext once the player has interacted with the page.
+       *
+       * Browsers commonly block autoplaying audio until a user gesture occurs, so the game waits
+       * until start or unmute actions to initialize sound synthesis.
+       *
+       * @returns {void}
+       */
+      function initAudio() {
+        if (audioCtx || !audioEnabled) {
+          return;
+        }
+        const AudioContextCtor = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContextCtor) {
+          audioStateEl.textContent = "Unsupported";
+          return;
+        }
+        audioCtx = new AudioContextCtor();
+        audioStateEl.textContent = "Live";
+      }
+
+      /**
+       * Plays a short synthesized tone used to build effects and the simple music bed.
+       *
+       * @param {number} freq - Oscillator frequency in hertz.
+       * @param {number} duration - Audible duration in seconds before the voice is released.
+       * @param {OscillatorType} [type="square"] - Oscillator waveform for the note.
+       * @param {number} [volume=0.04] - Peak gain applied to the generated tone.
+       * @param {number} [delay=0] - Delay in seconds from the current audio clock.
+       * @returns {void}
+       */
+      function playTone(freq, duration, type = "square", volume = 0.04, delay = 0) {
+        if (!audioEnabled || !audioCtx) {
+          return;
+        }
+        const now = audioCtx.currentTime + delay;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, now);
+        gain.gain.setValueAtTime(0.0001, now);
+        gain.gain.exponentialRampToValueAtTime(volume, now + 0.01);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(now);
+        osc.stop(now + duration + 0.03);
+      }
+
+      /**
+       * Maps symbolic game events to small tone patterns.
+       *
+       * Keeping this lookup centralized makes it easy to tune the arcade feel without scattering
+       * audio rules throughout gameplay code.
+       *
+       * @param {string} name - Named effect preset to play.
+       * @returns {void}
+       */
+      function sound(name) {
+        if (!audioEnabled || !audioCtx) {
+          return;
+        }
+        const sounds = {
+          shoot: () => playTone(660, 0.08, "square", 0.03),
+          hit: () => { playTone(180, 0.12, "sawtooth", 0.045); playTone(100, 0.16, "triangle", 0.03, 0.02); },
+          enemyShoot: () => playTone(250, 0.1, "triangle", 0.03),
+          levelUp: () => [523.25, 659.25, 783.99, 1046.5].forEach((freq, index) => playTone(freq, 0.18, "square", 0.03, index * 0.06)),
+          hurt: () => { playTone(220, 0.14, "square", 0.05); playTone(140, 0.18, "sawtooth", 0.04, 0.05); },
+          pickup: () => [392, 523.25, 659.25].forEach((freq, index) => playTone(freq, 0.12, "triangle", 0.025, index * 0.04)),
+          pause: () => playTone(330, 0.12, "triangle", 0.03),
+          victory: () => [523.25, 659.25, 783.99, 1046.5, 1318.51].forEach((freq, index) => playTone(freq, 0.26, "square", 0.03, index * 0.09))
+        };
+        if (sounds[name]) {
+          sounds[name]();
+        }
+      }
+
+      /**
+       * Advances the background music sequencer while active play is in progress.
+       *
+       * The sequence speeds up with later waves so audio pressure rises with the gameplay tempo.
+       *
+       * @param {number} dt - Frame delta in seconds.
+       * @returns {void}
+       */
+      function updateMusic(dt) {
+        if (!audioEnabled || !audioCtx || state.mode !== "playing") {
+          return;
+        }
+        const sequence = [261.63, 293.66, 329.63, 392, 329.63, 293.66, 246.94, 196, 220, 246.94];
+        const pace = Math.max(0.16, 0.42 - state.level * 0.03);
+        musicClock += dt;
+        if (musicClock >= pace) {
+          musicClock = 0;
+          const freq = sequence[musicStep % sequence.length] * (state.raidCleared ? 1.5 : 1);
+          playTone(freq, pace * 0.8, "triangle", 0.018);
+          if (musicStep % 4 === 3) {
+            playTone(freq / 2, pace * 0.7, "sine", 0.012, 0.02);
+          }
+          musicStep += 1;
+        }
+      }
+
+      /**
+       * Creates a fresh player object positioned at the village defense line.
+       *
+       * @returns {Player}
+       */
+      function createPlayer() {
+        return {
+          x: WIDTH / 2 - 26,
+          y: PLAYER_Y,
+          width: 52,
+          height: 32,
+          speed: 320,
+          cooldown: 0,
+          hitFlash: 0,
+          turretBob: 0
+        };
+      }
+
+      /**
+       * Builds one destructible shield formation from individual block cells.
+       *
+       * The gaps in the pattern create firing lanes and corners that wear away gradually instead
+       * of collapsing into a solid rectangle.
+       *
+       * @param {number} x - Horizontal starting position for the shield cluster.
+       * @returns {Shield}
+       */
+      function createShield(x) {
+        const blocks = [];
+        const cols = 7;
+        const rows = 4;
+        const size = 12;
+        for (let row = 0; row < rows; row += 1) {
+          for (let col = 0; col < cols; col += 1) {
+            if ((row === 3 && (col === 0 || col === cols - 1)) || (row === 0 && (col === 2 || col === 4))) {
+              continue;
+            }
+            blocks.push({
+              x: x + col * size,
+              y: GROUND_Y - 106 + row * size,
+              size,
+              hp: 3
+            });
+          }
+        }
+        return { blocks };
+      }
+
+      /**
+       * Chooses the mob family assigned to a wave row.
+       *
+       * Higher rows are more valuable or dangerous, mirroring classic Space Invaders structure.
+       *
+       * @param {number} row - Zero-based row index in the invasion grid.
+       * @returns {string}
+       */
+      function enemyTypeForRow(row) {
+        if (row === 0) return "enderman";
+        if (row === 1) return "blaze";
+        if (row >= 3) return "slime";
+        return "creeper";
+      }
+
+      /**
+       * Returns the baseline stats and colors for a named enemy type.
+       *
+       * @param {string} type - Mob variant identifier such as `creeper` or `blaze`.
+       * @returns {{score: number, color: string, accent: string, fireRate: number, hp: number, icon: string}}
+       */
+      function enemyTemplate(type) {
+        const templates = {
+          creeper: { score: 10, color: "#76d164", accent: "#234c15", fireRate: 1.0, hp: 1, icon: "C" },
+          enderman: { score: 20, color: "#c578ff", accent: "#2c1038", fireRate: 1.25, hp: 1, icon: "E" },
+          blaze: { score: 30, color: "#ffd45b", accent: "#8c5600", fireRate: 1.4, hp: 2, icon: "B" },
+          slime: { score: 15, color: "#8ff597", accent: "#1e7f31", fireRate: 0.9, hp: 1, icon: "S" }
+        };
+        return templates[type];
+      }
+
+      /**
+       * Creates the full enemy formation for a level.
+       *
+       * Level scaling is intentionally modest: later raids increase both movement pressure and the
+       * score value of each kill, while late blazes gain extra durability.
+       *
+       * @param {number} level - One-based raid number.
+       * @returns {Enemy[]}
+       */
+      function createEnemies(level) {
+        const enemies = [];
+        const rows = 5;
+        const cols = 9;
+        const spacingX = 84;
+        const spacingY = 62;
+        const offsetX = 120;
+        const offsetY = 110;
+        for (let row = 0; row < rows; row += 1) {
+          const type = enemyTypeForRow(row);
+          const t = enemyTemplate(type);
+          for (let col = 0; col < cols; col += 1) {
+            enemies.push({
+              x: offsetX + col * spacingX,
+              y: offsetY + row * spacingY,
+              width: 42,
+              height: 34,
+              type,
+              color: t.color,
+              accent: t.accent,
+              icon: t.icon,
+              score: t.score + level * 2,
+              fireRate: t.fireRate,
+              hp: t.hp + (level >= 4 && type === "blaze" ? 1 : 0),
+              wobble: Math.random() * Math.PI * 2
+            });
+          }
+        }
+        return enemies;
+      }
+
+      /**
+       * Reinitializes the wave state and rebuilds all transient gameplay entities.
+       *
+       * This helper is used both for a clean restart and for re-seeding later levels while keeping
+       * durable run state, such as score or hearts, when requested.
+       *
+       * @param {number} [level=1] - Level number to prepare.
+       * @param {boolean} [keepScore=false] - Whether to preserve the current score.
+       * @param {boolean} [keepLives=false] - Whether to preserve the current life total.
+       * @returns {void}
+       */
+      function resetLevel(level = 1, keepScore = false, keepLives = false) {
+        state.mode = "start";
+        state.level = level;
+        state.score = keepScore ? state.score : 0;
+        state.lives = keepLives ? state.lives : 3;
+        state.combo = 0;
+        state.elapsed = 0;
+        state.messageTimer = 0;
+        state.message = "";
+        state.player = createPlayer();
+        state.playerBullets = [];
+        state.enemyBullets = [];
+        state.particles = [];
+        state.powerups = [];
+        state.shields = [createShield(140), createShield(360), createShield(580), createShield(800)];
+        state.enemies = createEnemies(level);
+        state.shake = 0;
+        state.enemyDirection = 1;
+        state.enemyStepTimer = 0;
+        state.enemyFireTimer = 1.2;
+        state.autoShootCooldown = 0;
+        state.powerShotTimer = 0;
+        state.rapidShotTimer = 0;
+        state.waveIntro = 1.2;
+        state.raidCleared = false;
+        updateHUD();
+        setStatus("Press Start to defend the village.", "Clear all raiders");
+      }
+
+      /**
+       * Refreshes score-related UI that depends on the current run rather than saved options.
+       *
+       * @returns {void}
+       */
+      function updateHUD() {
+        const currentHigh = Math.max(saveData.highScore || 0, state.score);
+        highScoreEl.textContent = String(currentHigh);
+        bestLevelEl.textContent = String(Math.max(saveData.bestLevel || 1, state.level));
+      }
+
+      /**
+       * Starts active play from the start screen, or from a fresh reset after an ending state.
+       *
+       * @returns {void}
+       */
+      function startGame() {
+        initAudio();
+        if (audioCtx && audioCtx.state === "suspended") {
+          audioCtx.resume();
+        }
+        if (!state.player || state.mode === "gameover" || state.mode === "victory") {
+          resetLevel(1, false, false);
+        }
+        state.mode = "playing";
+        state.waveIntro = Math.max(state.waveIntro, 0.3);
+        setStatus(`Level ${state.level} raid started. Protect the wall.`, `Defeat ${state.enemies.length} raiders`);
+      }
+
+      /**
+       * Advances to the next raid or transitions into the victory state after the final wave.
+       *
+       * @returns {void}
+       */
+      function nextLevel() {
+        if (state.level >= MAX_LEVEL) {
+          state.mode = "victory";
+          state.raidCleared = true;
+          persistSave();
+          sound("victory");
+          setStatus("Victory! The village is safe and the portal is sealed.", "Press Restart to play again");
+          return;
+        }
+        state.level += 1;
+        persistSave();
+        state.playerBullets = [];
+        state.enemyBullets = [];
+        state.powerups = [];
+        state.particles = [];
+        state.shields = [createShield(140), createShield(360), createShield(580), createShield(800)];
+        state.enemies = createEnemies(state.level);
+        state.enemyDirection = 1;
+        state.enemyStepTimer = 0;
+        state.enemyFireTimer = 1;
+        state.waveIntro = 1.4;
+        state.player.x = WIDTH / 2 - state.player.width / 2;
+        state.player.cooldown = 0;
+        state.mode = "playing";
+        sound("levelUp");
+        setStatus(`Level ${state.level} begins. The mobs are faster now.`, `Survive wave ${state.level} / ${MAX_LEVEL}`);
+      }
+
+      /**
+       * Restores the game to its initial pre-start state.
+       *
+       * @returns {void}
+       */
+      function restartGame() {
+        resetLevel(1, false, false);
+        state.mode = "start";
+      }
+
+      /**
+       * Toggles between the active and paused runtime modes.
+       *
+       * Requests from non-playable screens are ignored so the start, victory, and game-over
+       * overlays do not accidentally masquerade as paused gameplay.
+       *
+       * @returns {void}
+       */
+      function togglePause() {
+        if (state.mode !== "playing" && state.mode !== "paused") {
+          return;
+        }
+        state.mode = state.mode === "paused" ? "playing" : "paused";
+        sound("pause");
+        setStatus(state.mode === "paused" ? "Game paused." : "Raid resumed.", state.mode === "paused" ? "Press P to resume" : "Clear all raiders");
+      }
+
+      /**
+       * Toggles audio playback while preserving the current AudioContext when possible.
+       *
+       * Suspending instead of discarding the context avoids rebuilding the audio graph after every
+       * mute/unmute cycle.
+       *
+       * @returns {void}
+       */
+      function toggleMute() {
+        audioEnabled = !audioEnabled;
+        if (!audioEnabled && audioCtx) {
+          audioCtx.suspend();
+        } else if (audioEnabled) {
+          initAudio();
+          if (audioCtx && audioCtx.state === "suspended") {
+            audioCtx.resume();
+          }
+        }
+        updateMetaUI();
+      }
+
+      /**
+       * Reduces visual noise by disabling particle-heavy effects while leaving gameplay intact.
+       *
+       * @returns {void}
+       */
+      function toggleEffects() {
+        effectsEnabled = !effectsEnabled;
+        effectStateEl.textContent = effectsEnabled ? "On" : "Low";
+      }
+
+      /**
+       * Spawns one or more player projectiles when the launcher is off cooldown.
+       *
+       * Rapid-shot lowers the next cooldown, while spread-shot replaces the single arrow with a
+       * three-projectile fan that is still centered on the player's current position.
+       *
+       * @returns {void}
+       */
+      function firePlayerBullet() {
+        if (state.player.cooldown > 0) {
+          return;
+        }
+        const count = state.powerShotTimer > 0 ? 3 : 1;
+        const spread = count === 3 ? [-14, 0, 14] : [0];
+        spread.forEach((offset) => {
+          state.playerBullets.push({
+            x: state.player.x + state.player.width / 2 + offset - 3,
+            y: state.player.y - 10,
+            width: 6,
+            height: 14,
+            speed: 560,
+            color: count === 3 ? palette.diamond : "#ffffff"
+          });
+        });
+        state.player.cooldown = state.rapidShotTimer > 0 ? 0.12 : 0.28;
+        sound("shoot");
+      }
+
+      /**
+       * Spawns a projectile from a specific enemy toward the defense line.
+       *
+       * @param {Enemy} enemy - The invading mob chosen to shoot this frame.
+       * @returns {void}
+       */
+      function fireEnemyBullet(enemy) {
+        state.enemyBullets.push({
+          x: enemy.x + enemy.width / 2 - 4,
+          y: enemy.y + enemy.height - 2,
+          width: 8,
+          height: 16,
+          speed: 220 + state.level * 24,
+          color: enemy.type === "blaze" ? palette.lava : enemy.type === "enderman" ? "#d280ff" : palette.redstone
+        });
+        sound("enemyShoot");
+      }
+
+      /**
+       * Emits short-lived debris for impacts, pickups, and shield destruction.
+       *
+       * @param {number} x - Particle origin x-coordinate.
+       * @param {number} y - Particle origin y-coordinate.
+       * @param {string} color - Fill color shared by the spawned particles.
+       * @param {number} [amount=12] - Number of particles to create.
+       * @returns {void}
+       */
+      function spawnParticles(x, y, color, amount = 12) {
+        if (!effectsEnabled) {
+          return;
+        }
+        for (let i = 0; i < amount; i += 1) {
+          state.particles.push({
+            x,
+            y,
+            vx: (Math.random() - 0.5) * 180,
+            vy: (Math.random() - 0.5) * 180,
+            life: Math.random() * 0.5 + 0.25,
+            size: Math.random() * 6 + 2,
+            color
+          });
+        }
+      }
+
+      /**
+       * Randomly converts a defeated enemy into a falling collectible.
+       *
+       * The drop table favors no drop at all so power-ups remain intermittent rewards rather than
+       * a guaranteed state the player can plan around every kill.
+       *
+       * @param {Enemy} enemy - Enemy whose defeat may create the collectible.
+       * @returns {void}
+       */
+      function spawnPowerup(enemy) {
+        const roll = Math.random();
+        if (roll > 0.18) {
+          return;
+        }
+        const kinds = [
+          { type: "rapid", color: palette.gold, icon: "⚡", duration: 8 },
+          { type: "spread", color: palette.diamond, icon: "✦", duration: 7 },
+          { type: "heart", color: "#ff8ca1", icon: "❤", duration: 0 }
+        ];
+        const kind = kinds[Math.floor(Math.random() * kinds.length)];
+        state.powerups.push({
+          x: enemy.x + enemy.width / 2 - 10,
+          y: enemy.y + enemy.height / 2,
+          width: 20,
+          height: 20,
+          speed: 120,
+          ...kind
+        });
+      }
+
+      /**
+       * Performs axis-aligned rectangle collision detection.
+       *
+       * @param {{x: number, y: number, width: number, height: number}} a - First rectangle.
+       * @param {{x: number, y: number, width: number, height: number}} b - Second rectangle.
+       * @returns {boolean}
+       */
+      function rectsOverlap(a, b) {
+        return (
+          a.x < b.x + b.width &&
+          a.x + a.width > b.x &&
+          a.y < b.y + b.height &&
+          a.y + a.height > b.y
+        );
+      }
+
+      /**
+       * Applies projectile damage to the first intact shield block it intersects.
+       *
+       * Projectile processing stops at the first hit so a single bullet can never tunnel through an
+       * entire shield formation in one frame.
+       *
+       * @param {Projectile} projectile - Bullet being tested against all shield blocks.
+       * @returns {boolean} Whether the projectile was consumed by a shield.
+       */
+      function damageShield(projectile) {
+        for (const shield of state.shields) {
+          for (const block of shield.blocks) {
+            if (block.hp > 0 && rectsOverlap(projectile, { x: block.x, y: block.y, width: block.size, height: block.size })) {
+              block.hp -= 1;
+              projectile.hit = true;
+              spawnParticles(block.x + block.size / 2, block.y + block.size / 2, palette.stone, 6);
+              if (block.hp <= 0) {
+                spawnParticles(block.x + block.size / 2, block.y + block.size / 2, palette.lava, 10);
+              }
+              return true;
+            }
+          }
+        }
+        return false;
+      }
+
+      /**
+       * Applies damage to the player, updates feedback effects, and handles defeat transitions.
+       *
+       * @returns {void}
+       */
+      function handlePlayerHit() {
+        state.lives -= 1;
+        state.player.hitFlash = 0.5;
+        state.shake = Math.max(state.shake, 10);
+        spawnParticles(state.player.x + state.player.width / 2, state.player.y + state.player.height / 2, palette.redstone, 18);
+        sound("hurt");
+        if (state.lives <= 0) {
+          state.mode = "gameover";
+          persistSave();
+          setStatus("Game over. The village fell to the invasion.", "Press Restart to try again");
+        } else {
+          setStatus(`You were hit! ${state.lives} hearts remaining.`, "Hold the line");
+        }
+      }
+
+      /**
+       * Advances player movement, fire cooldowns, and hit feedback for the current frame.
+       *
+       * Movement is continuous while keys are held, matching the control help shown in the UI.
+       *
+       * @param {number} dt - Frame delta in seconds.
+       * @returns {void}
+       */
+      function updatePlayer(dt) {
+        const player = state.player;
+        const movingLeft = keys.has("ArrowLeft") || keys.has("KeyA");
+        const movingRight = keys.has("ArrowRight") || keys.has("KeyD");
+        if (movingLeft && !movingRight) {
+          player.x -= player.speed * dt;
+        } else if (movingRight && !movingLeft) {
+          player.x += player.speed * dt;
+        }
+        player.x = Math.max(20, Math.min(WIDTH - player.width - 20, player.x));
+        player.turretBob += dt * 4;
+        player.cooldown = Math.max(0, player.cooldown - dt);
+        player.hitFlash = Math.max(0, player.hitFlash - dt);
+
+        const firing = keys.has("Space");
+        if (firing) {
+          firePlayerBullet();
+        }
+      }
+
+      /**
+       * Moves bullets, resolves collisions, awards score, and removes spent projectiles.
+       *
+       * This function is where most combat consequences converge: enemy deaths, shield erosion,
+       * player damage, combo growth, and collectible drops all originate from projectile outcomes.
+       *
+       * @param {number} dt - Frame delta in seconds.
+       * @returns {void}
+       */
+      function updateBullets(dt) {
+        state.playerBullets.forEach((bullet) => {
+          bullet.y -= bullet.speed * dt;
+        });
+        state.enemyBullets.forEach((bullet) => {
+          bullet.y += bullet.speed * dt;
+        });
+
+        for (const bullet of state.playerBullets) {
+          damageShield(bullet);
+          for (const enemy of state.enemies) {
+            if (enemy.hp > 0 && rectsOverlap(bullet, enemy)) {
+              enemy.hp -= 1;
+              bullet.hit = true;
+              spawnParticles(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, enemy.color, 16);
+              if (enemy.hp <= 0) {
+                state.score += enemy.score;
+                state.combo += 1;
+                state.shake = Math.max(state.shake, 6);
+                spawnPowerup(enemy);
+                sound("hit");
+              }
+              updateHUD();
+              break;
+            }
+          }
+        }
+
+        for (const bullet of state.enemyBullets) {
+          if (damageShield(bullet)) {
+            continue;
+          }
+          if (rectsOverlap(bullet, state.player)) {
+            bullet.hit = true;
+            handlePlayerHit();
+          }
+          if (bullet.y + bullet.height >= GROUND_Y + 12) {
+            bullet.hit = true;
+          }
+        }
+
+        state.playerBullets = state.playerBullets.filter((bullet) => !bullet.hit && bullet.y + bullet.height > 0);
+        state.enemyBullets = state.enemyBullets.filter((bullet) => !bullet.hit && bullet.y < HEIGHT + bullet.height);
+        state.enemies = state.enemies.filter((enemy) => enemy.hp > 0);
+      }
+
+      /**
+       * Advances the invasion formation, checks loss conditions, and selects enemy shooters.
+       *
+       * The formation behaves as one pressure system: it sweeps horizontally, steps downward on
+       * edge contact, and becomes more dangerous as the mob count shrinks.
+       *
+       * @param {number} dt - Frame delta in seconds.
+       * @returns {void}
+       */
+      function updateEnemies(dt) {
+        if (!state.enemies.length) {
+          nextLevel();
+          return;
+        }
+
+        const speed = 26 + state.level * 9 + (45 - state.enemies.length) * 0.9;
+        let hitEdge = false;
+        state.enemies.forEach((enemy) => {
+          enemy.x += state.enemyDirection * speed * dt;
+          enemy.wobble += dt * 4;
+          if (enemy.x <= 18 || enemy.x + enemy.width >= WIDTH - 18) {
+            hitEdge = true;
+          }
+        });
+
+        if (hitEdge) {
+          state.enemyDirection *= -1;
+          state.enemies.forEach((enemy) => {
+            enemy.y += 18;
+          });
+          state.shake = Math.max(state.shake, 5);
+        }
+
+        const closestY = Math.max(...state.enemies.map((enemy) => enemy.y + enemy.height));
+        if (closestY >= GROUND_Y - 6) {
+          state.mode = "gameover";
+          persistSave();
+          setStatus("The raiders reached the village wall.", "Press Restart to try again");
+        }
+
+        state.enemyFireTimer -= dt;
+        if (state.enemyFireTimer <= 0) {
+          const columns = new Map();
+          for (const enemy of state.enemies) {
+            const key = Math.round(enemy.x / 10);
+            const existing = columns.get(key);
+            if (!existing || enemy.y > existing.y) {
+              columns.set(key, enemy);
+            }
+          }
+          const candidates = [...columns.values()];
+          if (candidates.length) {
+            const shooter = candidates[Math.floor(Math.random() * candidates.length)];
+            fireEnemyBullet(shooter);
+          }
+          state.enemyFireTimer = Math.max(0.35, 1.55 - state.level * 0.12 - Math.min(0.55, (45 - state.enemies.length) * 0.012));
+        }
+      }
+
+      /**
+       * Falls active power-ups, applies their effects on pickup, and expires timed buffs.
+       *
+       * @param {number} dt - Frame delta in seconds.
+       * @returns {void}
+       */
+      function updatePowerups(dt) {
+        state.powerups.forEach((powerup) => {
+          powerup.y += powerup.speed * dt;
+          powerup.spin = (powerup.spin || 0) + dt * 8;
+          if (rectsOverlap(powerup, state.player)) {
+            powerup.hit = true;
+            if (powerup.type === "heart") {
+              state.lives = Math.min(5, state.lives + 1);
+              setStatus("Healing stew collected. Heart restored.", "Keep the village safe");
+            } else if (powerup.type === "rapid") {
+              state.rapidShotTimer = powerup.duration;
+              setStatus("Rapid Redstone active!", "Fire faster");
+            } else if (powerup.type === "spread") {
+              state.powerShotTimer = powerup.duration;
+              setStatus("Diamond Spread active!", "Triple-shot online");
+            }
+            spawnParticles(powerup.x + 10, powerup.y + 10, powerup.color, 12);
+            sound("pickup");
+            updateHUD();
+          }
+        });
+
+        state.powerups = state.powerups.filter((powerup) => !powerup.hit && powerup.y < HEIGHT);
+        state.rapidShotTimer = Math.max(0, state.rapidShotTimer - dt);
+        state.powerShotTimer = Math.max(0, state.powerShotTimer - dt);
+      }
+
+      /**
+       * Advances short-lived particle debris and removes expired fragments.
+       *
+       * @param {number} dt - Frame delta in seconds.
+       * @returns {void}
+       */
+      function updateParticles(dt) {
+        state.particles.forEach((particle) => {
+          particle.x += particle.vx * dt;
+          particle.y += particle.vy * dt;
+          particle.vy += 180 * dt;
+          particle.life -= dt;
+        });
+        state.particles = state.particles.filter((particle) => particle.life > 0);
+      }
+
+      /**
+       * Animates the background starfield independently of gameplay state.
+       *
+       * The stars continue moving even on non-playing screens so the scene feels alive behind the
+       * overlays.
+       *
+       * @param {number} dt - Frame delta in seconds.
+       * @returns {void}
+       */
+      function updateStars(dt) {
+        stars.forEach((star) => {
+          star.y += star.speed * dt;
+          if (star.y > HEIGHT * 0.7) {
+            star.y = -4;
+            star.x = Math.random() * WIDTH;
+          }
+        });
+      }
+
+      /**
+       * Executes one frame of game simulation in a fixed subsystem order.
+       *
+       * The order matters: enemies move before bullets resolve, bullets resolve before power-up
+       * collection cleanup, and particles always update last because they are purely cosmetic.
+       *
+       * @param {number} dt - Frame delta in seconds.
+       * @returns {void}
+       */
+      function update(dt) {
+        updateStars(dt);
+        if (state.mode !== "playing") {
+          return;
+        }
+        state.elapsed += dt;
+        state.waveIntro = Math.max(0, state.waveIntro - dt);
+        updateMusic(dt);
+        updatePlayer(dt);
+        updateEnemies(dt);
+        updateBullets(dt);
+        updatePowerups(dt);
+        updateParticles(dt);
+        state.shake = Math.max(0, state.shake - dt * 18);
+      }
+
+      /**
+       * Draws a chunky pixel-art rectangle with a one-step inset outline.
+       *
+       * This small primitive is the backbone of most sprites and scenery in the game.
+       *
+       * @param {number} x - Left edge of the rectangle.
+       * @param {number} y - Top edge of the rectangle.
+       * @param {number} w - Rectangle width.
+       * @param {number} h - Rectangle height.
+       * @param {string} fill - Fill color.
+       * @param {string} [stroke="#000"] - Stroke color for the inset outline.
+       * @returns {void}
+       */
+      function drawPixelRect(x, y, w, h, fill, stroke = "#000") {
+        ctx.fillStyle = fill;
+        ctx.fillRect(x, y, w, h);
+        ctx.strokeStyle = stroke;
+        ctx.lineWidth = 2;
+        ctx.strokeRect(x + 1, y + 1, w - 2, h - 2);
+      }
+
+      /**
+       * Paints the sky, stars, moon, and layered block ground behind gameplay actors.
+       *
+       * @returns {void}
+       */
+      function drawBackground() {
+        ctx.clearRect(0, 0, WIDTH, HEIGHT);
+        const sky = ctx.createLinearGradient(0, 0, 0, GROUND_Y);
+        sky.addColorStop(0, "#7fd3ff");
+        sky.addColorStop(0.45, "#4079db");
+        sky.addColorStop(0.451, "#20385f");
+        sky.addColorStop(1, "#101828");
+        ctx.fillStyle = sky;
+        ctx.fillRect(0, 0, WIDTH, HEIGHT);
+
+        stars.forEach((star) => {
+          ctx.fillStyle = "rgba(255,255,255,0.85)";
+          ctx.fillRect(star.x, star.y, star.size, star.size);
+        });
+
+        const moonX = 790;
+        const moonY = 110;
+        drawPixelRect(moonX, moonY, 78, 78, "#f5f2ce", "#b8b38f");
+        drawPixelRect(moonX + 10, moonY + 14, 12, 12, "#d5cfac", "#b8b38f");
+        drawPixelRect(moonX + 46, moonY + 28, 10, 10, "#d5cfac", "#b8b38f");
+        drawPixelRect(moonX + 26, moonY + 48, 14, 14, "#d5cfac", "#b8b38f");
+
+        for (let i = 0; i < WIDTH; i += 64) {
+          drawPixelRect(i, GROUND_Y, 64, HEIGHT - GROUND_Y, i % 128 === 0 ? "#5aa63a" : "#63b540", "#305b19");
+          drawPixelRect(i, GROUND_Y + 26, 64, HEIGHT - GROUND_Y, "#7d5a34", "#56351a");
+        }
+        drawPixelRect(0, GROUND_Y - 18, WIDTH, 18, "#79c350", "#305b19");
+      }
+
+      /**
+       * Renders score, level, lives, combo, and active buff indicators onto the canvas.
+       *
+       * @returns {void}
+       */
+      function drawHUD() {
+        drawPixelRect(14, 14, 246, 84, "rgba(9,17,12,0.72)", "#4a6a35");
+        drawPixelRect(700, 14, 246, 84, "rgba(9,17,12,0.72)", "#4a6a35");
+
+        ctx.fillStyle = "#d7ffd0";
+        ctx.font = "24px Impact, sans-serif";
+        ctx.fillText(`Score ${state.score}`, 28, 45);
+        ctx.fillText(`Level ${state.level}/${MAX_LEVEL}`, 720, 45);
+        ctx.fillStyle = "#fff1a8";
+        ctx.fillText(`Combo x${Math.max(1, state.combo)}`, 28, 75);
+        ctx.fillText(`Hearts ${"❤".repeat(state.lives)}`, 720, 75);
+
+        if (state.rapidShotTimer > 0) {
+          drawPixelRect(300, 20, 150, 26, palette.gold, "#986900");
+          ctx.fillStyle = "#241300";
+          ctx.fillText("Rapid", 336, 40);
+        }
+        if (state.powerShotTimer > 0) {
+          drawPixelRect(470, 20, 168, 26, palette.diamond, "#155f75");
+          ctx.fillStyle = "#053745";
+          ctx.fillText("Spread", 510, 40);
+        }
+      }
+
+      /**
+       * Draws the player's launcher, including hit flash and turret bob animation.
+       *
+       * @returns {void}
+       */
+      function drawPlayer() {
+        const p = state.player;
+        const flash = p.hitFlash > 0 ? "#ffd7dc" : palette.stone;
+        drawPixelRect(p.x, p.y + 10, p.width, 22, flash, "#3f4449");
+        drawPixelRect(p.x + 8, p.y, 36, 16, p.hitFlash > 0 ? "#ff8ca1" : palette.diamond, "#25606a");
+        drawPixelRect(p.x + 20, p.y - 12 + Math.sin(p.turretBob) * 2, 12, 20, palette.redstone, "#741722");
+        drawPixelRect(p.x + 4, p.y + 16, 10, 10, "#4caf50", "#1f551f");
+        drawPixelRect(p.x + p.width - 14, p.y + 16, 10, 10, "#4caf50", "#1f551f");
+      }
+
+      /**
+       * Draws one enemy sprite using type-specific facial details.
+       *
+       * @param {Enemy} enemy - Enemy to render for the current frame.
+       * @returns {void}
+       */
+      function drawEnemy(enemy) {
+        const bob = Math.sin(enemy.wobble) * 2;
+        drawPixelRect(enemy.x, enemy.y + bob, enemy.width, enemy.height, enemy.color, enemy.accent);
+        if (enemy.type === "creeper") {
+          drawPixelRect(enemy.x + 8, enemy.y + 8 + bob, 8, 8, "#0c220c", "#0c220c");
+          drawPixelRect(enemy.x + 26, enemy.y + 8 + bob, 8, 8, "#0c220c", "#0c220c");
+          drawPixelRect(enemy.x + 16, enemy.y + 18 + bob, 10, 12, "#0c220c", "#0c220c");
+        } else if (enemy.type === "enderman") {
+          drawPixelRect(enemy.x + 6, enemy.y + 12 + bob, 10, 4, "#ff4ef8", "#ff4ef8");
+          drawPixelRect(enemy.x + 24, enemy.y + 12 + bob, 10, 4, "#ff4ef8", "#ff4ef8");
+        } else if (enemy.type === "blaze") {
+          drawPixelRect(enemy.x + 10, enemy.y + 8 + bob, 20, 8, "#ffffff", "#ffffff");
+          drawPixelRect(enemy.x + 6, enemy.y + 20 + bob, 28, 6, palette.lava, palette.lava);
+        } else {
+          drawPixelRect(enemy.x + 8, enemy.y + 10 + bob, 8, 8, "#d8fff1", "#d8fff1");
+          drawPixelRect(enemy.x + 24, enemy.y + 10 + bob, 8, 8, "#d8fff1", "#d8fff1");
+        }
+      }
+
+      /**
+       * Draws all remaining shield blocks with color based on remaining durability.
+       *
+       * @returns {void}
+       */
+      function drawShields() {
+        state.shields.forEach((shield) => {
+          shield.blocks.forEach((block) => {
+            if (block.hp <= 0) return;
+            const colors = ["#244215", "#4f8d2a", "#76d164"];
+            drawPixelRect(block.x, block.y, block.size, block.size, colors[block.hp - 1], "#16300e");
+          });
+        });
+      }
+
+      /**
+       * Draws player and enemy projectiles.
+       *
+       * @returns {void}
+       */
+      function drawBullets() {
+        state.playerBullets.forEach((bullet) => {
+          drawPixelRect(bullet.x, bullet.y, bullet.width, bullet.height, bullet.color, "#14354f");
+        });
+        state.enemyBullets.forEach((bullet) => {
+          drawPixelRect(bullet.x, bullet.y, bullet.width, bullet.height, bullet.color, "#4f1806");
+        });
+      }
+
+      /**
+       * Draws active falling power-ups with a contrasting icon overlay.
+       *
+       * @returns {void}
+       */
+      function drawPowerups() {
+        state.powerups.forEach((powerup) => {
+          drawPixelRect(powerup.x, powerup.y, powerup.width, powerup.height, powerup.color, "#1e1e1e");
+          ctx.fillStyle = "#091208";
+          ctx.font = "18px Impact, sans-serif";
+          ctx.fillText(powerup.icon, powerup.x + 3, powerup.y + 16);
+        });
+      }
+
+      /**
+       * Draws transient particle effects when visual effects are enabled.
+       *
+       * @returns {void}
+       */
+      function drawParticles() {
+        if (!effectsEnabled) return;
+        state.particles.forEach((particle) => {
+          ctx.globalAlpha = Math.max(0, particle.life);
+          ctx.fillStyle = particle.color;
+          ctx.fillRect(particle.x, particle.y, particle.size, particle.size);
+          ctx.globalAlpha = 1;
+        });
+      }
+
+      /**
+       * Draws a centered overlay panel for non-playing modes such as pause or victory.
+       *
+       * @param {string} title - Large overlay title.
+       * @param {string} subtitle - Secondary explanatory line.
+       * @param {string[]} details - Supplemental detail lines shown below the subtitle.
+       * @param {string} color - Border color used by the overlay frame.
+       * @returns {void}
+       */
+      function drawOverlay(title, subtitle, details, color) {
+        ctx.fillStyle = "rgba(5, 8, 10, 0.58)";
+        ctx.fillRect(0, 0, WIDTH, HEIGHT);
+        drawPixelRect(170, 170, 620, 290, "rgba(14, 23, 14, 0.95)", color);
+        ctx.fillStyle = "#e9ffd5";
+        ctx.textAlign = "center";
+        ctx.font = "52px Impact, sans-serif";
+        ctx.fillText(title, WIDTH / 2, 250);
+        ctx.font = "24px Impact, sans-serif";
+        ctx.fillStyle = "#cde6c0";
+        ctx.fillText(subtitle, WIDTH / 2, 306);
+        ctx.font = "22px Impact, sans-serif";
+        details.forEach((line, index) => {
+          ctx.fillText(line, WIDTH / 2, 360 + index * 38);
+        });
+        ctx.textAlign = "left";
+      }
+
+      /**
+       * Renders the full current frame, including overlays for non-playing modes.
+       *
+       * World rendering is wrapped in a save/restore pair so screen shake only affects the active
+       * scene and not the outer overlay flash or post-scene UI treatments.
+       *
+       * @returns {void}
+       */
+      function render() {
+        drawBackground();
+        ctx.save();
+        if (effectsEnabled && state.shake > 0) {
+          ctx.translate((Math.random() - 0.5) * state.shake, (Math.random() - 0.5) * state.shake);
+        }
+
+        drawHUD();
+        drawShields();
+        if (state.player) {
+          drawPlayer();
+        }
+        state.enemies.forEach(drawEnemy);
+        drawBullets();
+        drawPowerups();
+        drawParticles();
+        ctx.restore();
+
+        if (state.waveIntro > 0 && state.mode === "playing") {
+          ctx.fillStyle = `rgba(255,255,255,${Math.min(0.32, state.waveIntro * 0.2)})`;
+          ctx.fillRect(0, 0, WIDTH, HEIGHT);
+        }
+
+        if (state.mode === "start") {
+          drawOverlay(
+            "Start Raid",
+            "Minecraft-flavored Space Invaders",
+            ["Hold left/right to move continuously", "Space fires, P pauses, M mutes", "Defeat five waves to seal the portal"],
+            "#63b540"
+          );
+        } else if (state.mode === "paused") {
+          drawOverlay(
+            "Paused",
+            "The village waits for your command",
+            ["Press P or Pause to resume", "Mute and reduced-effects toggles stay available", "Your held movement resumes when you return"],
+            "#65e7ff"
+          );
+        } else if (state.mode === "gameover") {
+          drawOverlay(
+            "Game Over",
+            `Final score ${state.score}`,
+            ["The invasion breached the wall", "Restart to rebuild your defense", `High score ${Math.max(saveData.highScore || 0, state.score)}`],
+            "#ff6d6d"
+          );
+        } else if (state.mode === "victory") {
+          drawOverlay(
+            "Victory",
+            `Village saved with ${state.score} points`,
+            ["All five raids were cleared", "Music and score are preserved locally", "Restart for another colorful run"],
+            "#ffd45c"
+          );
+        }
+      }
+
+      /**
+       * requestAnimationFrame entry point that advances simulation and schedules the next frame.
+       *
+       * The delta time is clamped so tab restores or debugger pauses cannot create a giant physics
+       * step that teleports actors or empties entire timers in one update.
+       *
+       * @param {DOMHighResTimeStamp} timestamp - High-resolution frame timestamp from the browser.
+       * @returns {void}
+       */
+      function gameLoop(timestamp) {
+        if (!lastTime) {
+          lastTime = timestamp;
+        }
+        const dt = Math.min(0.033, (timestamp - lastTime) / 1000);
+        lastTime = timestamp;
+        update(dt);
+        render();
+        justPressed.clear();
+        requestAnimationFrame(gameLoop);
+      }
+
+      // Keyboard input is normalized through event.code so layout variants remain predictable.
+      window.addEventListener("keydown", (event) => {
+        if (["ArrowLeft", "ArrowRight", "Space", "KeyA", "KeyD", "KeyP", "KeyM", "KeyL"].includes(event.code)) {
+          event.preventDefault();
+        }
+        if (!keys.has(event.code)) {
+          justPressed.add(event.code);
+        }
+        keys.add(event.code);
+
+        if (event.code === "KeyP") {
+          togglePause();
+        } else if (event.code === "KeyM") {
+          toggleMute();
+        } else if (event.code === "KeyL") {
+          toggleEffects();
+        } else if (event.code === "Enter" && state.mode === "start") {
+          startGame();
+        }
+      });
+
+      window.addEventListener("keyup", (event) => {
+        keys.delete(event.code);
+      });
+
+      // Button bindings mirror the keyboard actions and keep the game playable without shortcuts.
+      startButton.addEventListener("click", startGame);
+      pauseButton.addEventListener("click", togglePause);
+      muteButton.addEventListener("click", toggleMute);
+      restartButton.addEventListener("click", restartGame);
+
+      // Touch controls map on-screen buttons directly to the shared key state so the same
+      // movement and fire logic runs without any special-casing in the update loop.
+      // Pointer capture keeps the held state correct even when a finger slides off the button.
+      [
+        [document.getElementById("touchLeft"),  "ArrowLeft"],
+        [document.getElementById("touchRight"), "ArrowRight"],
+        [document.getElementById("touchFire"),  "Space"]
+      ].forEach(([btn, code]) => {
+        if (!btn) return;
+        btn.addEventListener("pointerdown", (e) => {
+          e.preventDefault();
+          btn.setPointerCapture(e.pointerId);
+          keys.add(code);
+          if (code === "Space" && state.mode === "start") startGame();
+        }, { passive: false });
+        btn.addEventListener("pointerup",     () => keys.delete(code));
+        btn.addEventListener("pointercancel", () => keys.delete(code));
+      });
+
+      // Bootstrap the non-canvas UI, seed the first level, and start the perpetual render loop.
+      updateMetaUI();
+      resetLevel(1, false, false);
+      requestAnimationFrame(gameLoop);
+    })();
+  </script>
+</body>
+</html>

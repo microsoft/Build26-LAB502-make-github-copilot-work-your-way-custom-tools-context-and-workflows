@@ -1,0 +1,122 @@
+name: Community Hub .NET CI
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'src/community-hub/**'
+      - '.github/workflows/community-hub.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'src/community-hub/**'
+      - '.github/workflows/community-hub.yml'
+
+permissions:
+  contents: read
+  checks: write
+  pull-requests: write
+
+jobs:
+  build-and-test:
+    name: Build and Test
+    runs-on: ubuntu-latest
+
+    defaults: &community_hub_defaults
+      run:
+        working-directory: src/community-hub
+
+    steps:
+      - &checkout_step
+        name: Checkout
+        uses: actions/checkout@v6
+
+      - &setup_dotnet_step
+        name: Setup .NET
+        uses: actions/setup-dotnet@c2fa09f4bde5ebb9d1777cf28262a3eb3db3ced7 # v5.2.0
+        with:
+          global-json-file: src/community-hub/global.json
+          cache: true
+          cache-dependency-path: src/community-hub/**/packages.lock.json
+
+      - &restore_dependencies_step
+        name: Restore dependencies
+        run: dotnet restore CommunityHub.slnx
+
+      - &build_step
+        name: Build
+        run: dotnet build CommunityHub.slnx --no-restore --configuration Release
+
+      - name: Run tests
+        run: >
+          dotnet test CommunityHub.Tests/CommunityHub.Tests.csproj
+          --no-build
+          --configuration Release
+          --logger "trx;LogFileName=test-results.trx"
+          --results-directory TestResults
+
+      - name: Publish test results
+        uses: EnricoMi/publish-unit-test-result-action@c950f6fb443cb5af20a377fd0dfaa78838901040 # v2.23.0
+        if: always()
+        with:
+          files: src/community-hub/TestResults/test-results.trx
+          comment_mode: always
+          check_name: Community Hub .NET Test Results
+
+  integration-test:
+    name: Integration Tests (SQL Server)
+    runs-on: ubuntu-latest
+    needs: build-and-test
+
+    services:
+      mssql:
+        image: mcr.microsoft.com/mssql/server:2022-latest
+        env:
+          ACCEPT_EULA: "Y"
+          SA_PASSWORD: "Test1234!"
+        ports:
+          - 1433:1433
+        options: >-
+          --health-cmd "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P Test1234! -No -Q 'SELECT 1'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    defaults: *community_hub_defaults
+
+    steps:
+      - *checkout_step
+
+      - *setup_dotnet_step
+
+      - *restore_dependencies_step
+
+      - *build_step
+
+      - name: Wait for SQL Server to be ready
+        run: |
+          for i in $(seq 1 12); do
+            /opt/mssql-tools18/bin/sqlcmd -S localhost,1433 -U sa -P "Test1234!" -No -Q "SELECT 1" -b 2>/dev/null && break
+            echo "Waiting for SQL Server... ($i/12)"
+            sleep 5
+          done
+
+      - name: Run integration tests
+        env:
+          MSSQL_CONNECTION_STRING: "Server=localhost,1433;Database=master;User Id=sa;Password=Test1234!;TrustServerCertificate=True;"
+        run: >
+          dotnet test CommunityHub.IntegrationTests/CommunityHub.IntegrationTests.csproj
+          --no-build
+          --configuration Release
+          --logger "trx;LogFileName=integration-test-results.trx"
+          --results-directory TestResults
+
+      - name: Publish integration test results
+        uses: EnricoMi/publish-unit-test-result-action@c950f6fb443cb5af20a377fd0dfaa78838901040 # v2.23.0
+        if: always()
+        with:
+          files: src/community-hub/TestResults/integration-test-results.trx
+          comment_mode: always
+          check_name: Community Hub .NET Integration Test Results

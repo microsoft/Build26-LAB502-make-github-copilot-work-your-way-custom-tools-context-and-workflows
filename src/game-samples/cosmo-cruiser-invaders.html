@@ -1,0 +1,1396 @@
+<!DOCTYPE html>
+<!-- saved from url=(0092)https://tsp-2ef34gds.azurewebsites.net/api/gallery/9c08c8ae-a450-4b1a-9ee6-2f4eeb23a6fc.html -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Cosmo Cruiser Invaders</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg-top: #0d1238;
+      --bg-bottom: #280f4a;
+      --panel: rgba(13, 19, 61, 0.78);
+      --panel-strong: rgba(11, 18, 49, 0.94);
+      --line: rgba(168, 255, 252, 0.25);
+      --text: #eef7ff;
+      --muted: #b0c7ee;
+      --teal: #73f4df;
+      --cyan: #8dfffa;
+      --pink: #ff97d2;
+      --gold: #ffd66b;
+      --danger: #ff7ca8;
+      --shadow: 0 18px 48px rgba(0, 0, 0, 0.38);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      min-height: 100%;
+      font-family: "Trebuchet MS", "Segoe UI", Arial, sans-serif;
+      background:
+        radial-gradient(circle at top, rgba(141, 255, 250, 0.08), transparent 36%),
+        linear-gradient(180deg, var(--bg-top), var(--bg-bottom));
+      color: var(--text);
+    }
+
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      overflow: hidden;
+    }
+
+    .shell {
+      width: min(100%, 1100px);
+      display: grid;
+      gap: 16px;
+      position: relative;
+    }
+
+    .hud {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .panel {
+      background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02));
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      padding: 14px 18px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+    }
+
+    .metric-label {
+      display: block;
+      font-size: 0.7rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .metric-value {
+      font-size: clamp(1.05rem, 2vw, 1.5rem);
+      font-weight: 700;
+      color: var(--cyan);
+    }
+
+    .cabinet {
+      position: relative;
+      border-radius: 36px;
+      padding: 18px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02)),
+        linear-gradient(180deg, rgba(115, 244, 223, 0.08), transparent 25%);
+      border: 1px solid rgba(255,255,255,0.12);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      isolation: isolate;
+    }
+
+    .cabinet::before {
+      content: "";
+      position: absolute;
+      inset: 8px;
+      border-radius: 28px;
+      border: 1px solid rgba(141, 255, 250, 0.12);
+      pointer-events: none;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: auto;
+      border-radius: 28px;
+      background:
+        radial-gradient(circle at 50% -20%, rgba(255,255,255,0.08), transparent 38%),
+        linear-gradient(180deg, rgba(4, 9, 28, 0.95), rgba(20, 8, 41, 0.98));
+    }
+
+    .overlay {
+      position: absolute;
+      inset: 18px;
+      border-radius: 28px;
+      background: linear-gradient(180deg, rgba(7, 15, 41, 0.52), rgba(9, 9, 27, 0.74));
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      z-index: 2;
+      transition: opacity 180ms ease;
+    }
+
+    .overlay.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .card {
+      width: min(100%, 560px);
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 30px;
+      padding: 28px;
+      text-align: center;
+      box-shadow: var(--shadow);
+    }
+
+    .eyebrow {
+      margin: 0 0 8px;
+      color: var(--teal);
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      font-size: 0.72rem;
+    }
+
+    h1,
+    h2,
+    p {
+      margin: 0;
+    }
+
+    h1,
+    h2 {
+      font-size: clamp(2rem, 4vw, 3.5rem);
+      line-height: 0.95;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .title-accent {
+      color: var(--pink);
+      display: block;
+      margin-top: 8px;
+    }
+
+    .subtitle,
+    .instructions,
+    .footer-note {
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .subtitle {
+      margin-top: 14px;
+      font-size: 1rem;
+    }
+
+    .instructions {
+      margin-top: 18px;
+      font-size: 0.95rem;
+    }
+
+    .cta-row {
+      margin-top: 22px;
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    button,
+    .touch-btn {
+      border: none;
+      border-radius: 999px;
+      background: linear-gradient(180deg, rgba(141,255,250,0.96), rgba(115,244,223,0.85));
+      color: #0a1631;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      cursor: pointer;
+      box-shadow: 0 12px 30px rgba(115, 244, 223, 0.28);
+      transition: transform 120ms ease, filter 120ms ease;
+    }
+
+    button {
+      padding: 14px 24px;
+      min-width: 180px;
+    }
+
+    button:hover,
+    .touch-btn:active {
+      transform: translateY(-1px) scale(1.01);
+      filter: brightness(1.04);
+    }
+
+    .touch-controls {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 16px;
+      align-items: center;
+    }
+
+    .touch-pad {
+      display: inline-flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .touch-btn {
+      width: 74px;
+      height: 74px;
+      font-size: 1.6rem;
+      user-select: none;
+      touch-action: manipulation;
+    }
+
+    .touch-btn.fire {
+      width: 110px;
+      background: linear-gradient(180deg, rgba(255,214,107,0.98), rgba(255,151,210,0.88));
+    }
+
+    .footer-note {
+      font-size: 0.72rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      text-align: center;
+      padding: 0 4px;
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    @media (max-width: 860px) {
+      body {
+        padding: 12px;
+      }
+
+      .hud {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .card {
+        padding: 22px;
+      }
+
+      .touch-controls {
+        grid-template-columns: 1fr;
+        justify-items: center;
+      }
+    }
+
+    @media (max-width: 580px) {
+      .shell {
+        gap: 12px;
+      }
+
+      .cabinet {
+        padding: 12px;
+        border-radius: 26px;
+      }
+
+      .overlay {
+        inset: 12px;
+      }
+
+      .touch-btn {
+        width: 64px;
+        height: 64px;
+      }
+
+      .touch-btn.fire {
+        width: 96px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="hud" aria-label="Game status">
+      <div class="panel">
+        <span class="metric-label">Score</span>
+        <span class="metric-value" id="scoreValue">0</span>
+      </div>
+      <div class="panel">
+        <span class="metric-label">Wave</span>
+        <span class="metric-value" id="levelValue">1</span>
+      </div>
+      <div class="panel">
+        <span class="metric-label">Lives</span>
+        <span class="metric-value" id="livesValue">3</span>
+      </div>
+      <div class="panel">
+        <span class="metric-label">Status</span>
+        <span class="metric-value" id="statusValue">Wave 1</span>
+      </div>
+    </section>
+
+    <section class="cabinet">
+      <canvas id="game" width="960" height="640" aria-label="Cosmo Cruiser Invaders game area"></canvas>
+
+      <div class="overlay hidden" id="startOverlay">
+        <div class="card">
+          <p class="eyebrow">Retro Future Arcade</p>
+          <h1>Cosmo Cruiser <span class="title-accent">Invaders</span></h1>
+          <p class="subtitle">A single-file Space Invaders tribute with a sleek mid-century future look.</p>
+          <p class="instructions">Use <strong>Arrow Keys</strong> or <strong>A / D</strong> to steer, <strong>Space</strong> to fire, or the touch controls below. Clear each saucer squadron before they descend into orbit.</p>
+          <div class="cta-row">
+            <button id="startButton" type="button">Launch Mission</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="overlay hidden" id="gameOverOverlay">
+        <div class="card">
+          <p class="eyebrow">Transmission Ended</p>
+          <h2 id="gameOverTitle">Mission Complete</h2>
+          <p class="subtitle" id="gameOverMessage">Your retro-future patrol route is clear.</p>
+          <p class="instructions" id="finalScoreText">Clear 5 waves to secure the skyline.</p>
+          <div class="cta-row">
+            <button id="restartButton" type="button">Play Again</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="touch-controls panel" aria-label="Touch controls">
+      <div class="touch-pad">
+        <button class="touch-btn" data-touch="left" type="button" aria-label="Move left">←</button>
+        <button class="touch-btn" data-touch="right" type="button" aria-label="Move right">→</button>
+      </div>
+      <button class="touch-btn fire" data-touch="fire" type="button" aria-label="Fire">Zap</button>
+    </section>
+
+    <p class="footer-note">MADE AT MICROSOFT BUILD 2026</p>
+    <p class="sr-only" aria-live="polite" id="liveRegion">Mission launched.</p>
+  </main>
+
+  <script>
+    /**
+     * Cosmo Cruiser Invaders runtime.
+     *
+     * This module owns the full game loop, state machine, collision model, and
+     * rendering pipeline for a single-file browser game. The simulation is
+     * deterministic per frame given the current random values used for visual
+     * effects and enemy shot selection.
+     *
+     * Main state transitions:
+     * - `Docked` -> start overlay visible, simulation idle.
+     * - `Cruising`/`Wave N` -> active simulation and rendering.
+     * - `Victorious` or `Defeated` -> game-over overlay visible, simulation paused.
+     */
+    const canvas = document.getElementById("game");
+    const ctx = canvas.getContext("2d");
+
+    const scoreValue = document.getElementById("scoreValue");
+    const levelValue = document.getElementById("levelValue");
+    const livesValue = document.getElementById("livesValue");
+    const statusValue = document.getElementById("statusValue");
+    const liveRegion = document.getElementById("liveRegion");
+
+    const startOverlay = document.getElementById("startOverlay");
+    const gameOverOverlay = document.getElementById("gameOverOverlay");
+    const startButton = document.getElementById("startButton");
+    const restartButton = document.getElementById("restartButton");
+    const gameOverTitle = document.getElementById("gameOverTitle");
+    const gameOverMessage = document.getElementById("gameOverMessage");
+    const finalScoreText = document.getElementById("finalScoreText");
+
+    /**
+     * Fixed world dimensions derived from the canvas backing store.
+     *
+     * `groundY` defines the skyline threshold used for invasion-loss checks and
+     * backdrop placement.
+     * @type {{width: number, height: number, groundY: number}}
+     */
+    const WORLD = {
+      width: canvas.width,
+      height: canvas.height,
+      groundY: canvas.height - 88
+    };
+
+    /** Maximum wave index required for mission victory. */
+    const FINAL_WAVE = 5;
+
+    /**
+     * Mutable game session state.
+     *
+     * Timers are in seconds and updated from requestAnimationFrame deltas.
+     * Collections are replaced with filtered arrays after collision passes to
+     * avoid in-loop mutation bugs.
+     */
+    const state = {
+      started: false,
+      running: false,
+      gameOver: false,
+      score: 0,
+      lives: 3,
+      level: 1,
+      status: "Docked",
+      lastTime: 0,
+      enemyDirection: 1,
+      enemyMoveTimer: 0,
+      enemyMoveInterval: 0.65,
+      enemyFireTimer: 0,
+      enemyFireInterval: 1.4,
+      playerCooldown: 0,
+      levelBannerTimer: 0,
+      shake: 0,
+      keys: {
+        left: false,
+        right: false,
+        fire: false
+      },
+      player: null,
+      enemies: [],
+      playerShots: [],
+      enemyShots: [],
+      shields: [],
+      particles: [],
+      stars: []
+    };
+
+    /** Current touch/pointer input latch, merged with keyboard input each frame. */
+    const touchState = {
+      left: false,
+      right: false,
+      fire: false
+    };
+
+    /**
+     * Creates a parallax starfield used by the background renderer.
+     * @returns {Array<{x: number, y: number, size: number, speed: number, alpha: number}>}
+     * Randomized values are intentionally broad to avoid visible repetition.
+     */
+    function createStars() {
+      const stars = [];
+      for (let i = 0; i < 85; i += 1) {
+        stars.push({
+          x: Math.random() * WORLD.width,
+          y: Math.random() * WORLD.height,
+          size: Math.random() * 2 + 0.5,
+          speed: Math.random() * 10 + 4,
+          alpha: Math.random() * 0.7 + 0.2
+        });
+      }
+      return stars;
+    }
+
+    /**
+     * Builds the player ship state object with default spawn values.
+     * @returns {{x: number, y: number, width: number, height: number, speed: number, flash: number}}
+     */
+    function createPlayer() {
+      return {
+        x: WORLD.width / 2,
+        y: WORLD.height - 112,
+        width: 78,
+        height: 28,
+        speed: 360,
+        flash: 0
+      };
+    }
+
+    /**
+     * Creates a full enemy formation for the given wave level.
+     * @param {number} level - Current wave number used to scale score values.
+     * @returns {Array<{row: number, col: number, x: number, y: number, width: number, height: number, alive: boolean, bob: number, hue: string, score: number}>}
+     * Rows near the top are worth more points, mirroring classic invader risk/reward.
+     */
+    function createEnemyGrid(level) {
+      const rows = 4;
+      const cols = 8;
+      const enemies = [];
+      const xSpacing = 86;
+      const ySpacing = 62;
+      const startX = 150;
+      const startY = 118;
+      for (let row = 0; row < rows; row += 1) {
+        for (let col = 0; col < cols; col += 1) {
+          enemies.push({
+            row,
+            col,
+            x: startX + col * xSpacing,
+            y: startY + row * ySpacing,
+            width: 56,
+            height: 34,
+            alive: true,
+            bob: Math.random() * Math.PI * 2,
+            hue: row % 2 === 0 ? "pink" : "teal",
+            score: (rows - row) * 10 + level * 2
+          });
+        }
+      }
+      return enemies;
+    }
+
+    /**
+     * Builds shield bunkers as destructible block grids.
+     * @returns {Array<{x: number, y: number, blocks: Array<{x: number, y: number, hp: number}>}>}
+     * Openings in the lower-middle create firing lanes for both player and enemies.
+     */
+    function createShields() {
+      const shields = [];
+      const count = 4;
+      const spacing = WORLD.width / (count + 1);
+      for (let i = 1; i <= count; i += 1) {
+        const blocks = [];
+        for (let y = 0; y < 4; y += 1) {
+          for (let x = 0; x < 6; x += 1) {
+            if ((y === 3 && (x === 0 || x === 5)) || (y === 2 && (x === 2 || x === 3))) {
+              continue;
+            }
+            blocks.push({
+              x: x * 10,
+              y: y * 10,
+              hp: 1
+            });
+          }
+        }
+        shields.push({
+          x: spacing * i - 30,
+          y: WORLD.height - 180,
+          blocks
+        });
+      }
+      return shields;
+    }
+
+    /**
+     * Resets all gameplay progress and starts a fresh mission.
+     *
+     * Side effects:
+     * - Reinitializes actor and projectile collections.
+     * - Hides overlays and updates the HUD.
+     * - Announces mission launch for screen readers.
+     */
+    function resetForNewGame() {
+      state.score = 0;
+      state.lives = 3;
+      state.level = 1;
+      state.status = "Cruising";
+      state.gameOver = false;
+      state.started = true;
+      state.running = true;
+      state.player = createPlayer();
+      state.playerShots = [];
+      state.enemyShots = [];
+      state.particles = [];
+      state.stars = createStars();
+      prepareLevel();
+      updateHud();
+      hideOverlays();
+      announce("Mission launched.");
+    }
+
+    /**
+     * Prepares one playable wave while preserving score and remaining lives.
+     *
+     * Difficulty scales by reducing movement/fire intervals with a lower bound so
+     * the wave remains playable on slower devices and touch controls.
+     */
+    function prepareLevel() {
+      state.enemies = createEnemyGrid(state.level);
+      state.shields = createShields();
+      state.enemyDirection = 1;
+      state.enemyMoveTimer = 0;
+      state.enemyFireTimer = 0;
+      state.enemyMoveInterval = Math.max(0.17, 0.65 - (state.level - 1) * 0.05);
+      state.enemyFireInterval = Math.max(0.45, 1.4 - (state.level - 1) * 0.08);
+      state.playerCooldown = 0;
+      state.levelBannerTimer = 1.2;
+      state.status = `Wave ${state.level}`;
+      if (state.player) {
+        state.player.x = WORLD.width / 2;
+      }
+      updateHud();
+      announce(`Wave ${state.level}`);
+    }
+
+    /** Hides both overlays so only active gameplay is visible. */
+    function hideOverlays() {
+      startOverlay.classList.add("hidden");
+      gameOverOverlay.classList.add("hidden");
+    }
+
+    /**
+     * Shows the pre-game overlay and pauses simulation updates.
+     * Also repurposes the final score line as a mission objective hint.
+     */
+    function showStartOverlay() {
+      startOverlay.classList.remove("hidden");
+      gameOverOverlay.classList.add("hidden");
+      state.running = false;
+      state.status = "Docked";
+      finalScoreText.textContent = `Clear ${FINAL_WAVE} waves to secure the skyline.`;
+      updateHud();
+    }
+
+    /**
+     * Transitions into terminal game state.
+     * @param {boolean} victory - True for win state, false for loss state.
+     */
+    function showGameOver(victory) {
+      state.running = false;
+      state.gameOver = true;
+      gameOverOverlay.classList.remove("hidden");
+      gameOverTitle.textContent = victory ? "Skyway Secured" : "Orbit Breached";
+      gameOverMessage.textContent = victory
+        ? "You cleared the saucer swarm and kept the skyline safe."
+        : "The invaders slipped past your cruiser. Time for another patrol.";
+      finalScoreText.textContent = `Final score: ${state.score}`;
+      state.status = victory ? "Victorious" : "Defeated";
+      updateHud();
+      announce(victory ? "Mission complete." : "Game over.");
+    }
+
+    /** Synchronizes HUD readouts with current game state values. */
+    function updateHud() {
+      scoreValue.textContent = state.score;
+      levelValue.textContent = state.level;
+      livesValue.textContent = state.lives;
+      statusValue.textContent = state.status;
+    }
+
+    /**
+     * Starts a rounded rectangle path, with a graceful fallback for browsers
+     * lacking CanvasRenderingContext2D.roundRect().
+     * @param {number} x - Left coordinate.
+     * @param {number} y - Top coordinate.
+     * @param {number} width - Rectangle width.
+     * @param {number} height - Rectangle height.
+     * @param {number} radius - Desired corner radius; clamped to safe limits.
+     */
+    function pathRoundRect(x, y, width, height, radius) {
+      const r = Math.min(radius, width / 2, height / 2);
+      ctx.beginPath();
+      if (typeof ctx.roundRect === "function") {
+        ctx.roundRect(x, y, width, height, r);
+        return;
+      }
+      ctx.moveTo(x + r, y);
+      ctx.arcTo(x + width, y, x + width, y + height, r);
+      ctx.arcTo(x + width, y + height, x, y + height, r);
+      ctx.arcTo(x, y + height, x, y, r);
+      ctx.arcTo(x, y, x + width, y, r);
+      ctx.closePath();
+    }
+
+    /**
+     * Sends status text to an aria-live region for accessibility updates.
+     * @param {string} message - Human-readable status message.
+     */
+    function announce(message) {
+      liveRegion.textContent = message;
+    }
+
+    /**
+     * Emits a player projectile if fire gating allows it.
+     * Fire rate is enforced by `state.playerCooldown` and only active while the
+     * mission is running.
+     */
+    function firePlayerShot() {
+      if (!state.running || state.playerCooldown > 0 || !state.player) {
+        return;
+      }
+      state.playerShots.push({
+        x: state.player.x,
+        y: state.player.y - 18,
+        radius: 4,
+        speed: 540
+      });
+      state.playerCooldown = 0.28;
+      state.player.flash = 0.1;
+    }
+
+    /**
+     * Emits an enemy projectile from a selected shooter.
+     * @param {{x: number, y: number}} enemy - Shooter position source.
+     */
+    function fireEnemyShot(enemy) {
+      state.enemyShots.push({
+        x: enemy.x,
+        y: enemy.y + 18,
+        width: 6,
+        height: 14,
+        speed: 240 + state.level * 14
+      });
+    }
+
+    /**
+     * Spawns a radial burst of short-lived particles.
+     * @param {number} x - Spawn center x.
+     * @param {number} y - Spawn center y.
+     * @param {string} color - Fill color for each particle.
+     * @param {number} count - Number of particles to spawn.
+     * @param {number} [speedScale=1] - Multiplier applied to initial velocity.
+     */
+    function spawnBurst(x, y, color, count, speedScale = 1) {
+      for (let i = 0; i < count; i += 1) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = (Math.random() * 90 + 40) * speedScale;
+        state.particles.push({
+          x,
+          y,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          life: Math.random() * 0.4 + 0.3,
+          color
+        });
+      }
+    }
+
+    /**
+     * Merges keyboard and touch input into a single horizontal axis.
+     * @returns {number} -1 for left, 1 for right, 0 for neutral or opposing inputs.
+     */
+    function getInputAxis() {
+      let axis = 0;
+      if (state.keys.left || touchState.left) {
+        axis -= 1;
+      }
+      if (state.keys.right || touchState.right) {
+        axis += 1;
+      }
+      return axis;
+    }
+
+    /**
+     * Updates player movement, cooldown timers, and held-fire behavior.
+     * @param {number} dt - Delta time in seconds.
+     * Preconditions: `state.player` must be non-null while running.
+     */
+    function updatePlayer(dt) {
+      const axis = getInputAxis();
+      state.player.x += axis * state.player.speed * dt;
+      state.player.x = Math.max(52, Math.min(WORLD.width - 52, state.player.x));
+      state.player.flash = Math.max(0, state.player.flash - dt);
+      state.playerCooldown = Math.max(0, state.playerCooldown - dt);
+      if (state.keys.fire || touchState.fire) {
+        firePlayerShot();
+      }
+    }
+
+    /**
+     * Advances projectile positions and culls out-of-bounds shots.
+     * @param {number} dt - Delta time in seconds.
+     */
+    function updateProjectiles(dt) {
+      for (const shot of state.playerShots) {
+        shot.y -= shot.speed * dt;
+      }
+      state.playerShots = state.playerShots.filter((shot) => shot.y > -20);
+
+      for (const shot of state.enemyShots) {
+        shot.y += shot.speed * dt;
+      }
+      state.enemyShots = state.enemyShots.filter((shot) => shot.y < WORLD.height + 24);
+    }
+
+    /**
+     * Updates enemy formation movement, firing cadence, and progression rules.
+     * @param {number} dt - Delta time in seconds.
+     *
+     * Control flow notes:
+     * - Empty alive set triggers either next wave or victory.
+     * - Horizontal movement reverses and descends on edge contact.
+     * - Fire selection chooses only bottom-most alive enemies per column.
+     */
+    function updateEnemies(dt) {
+      const alive = state.enemies.filter((enemy) => enemy.alive);
+      if (alive.length === 0) {
+        if (state.level >= FINAL_WAVE) {
+          showGameOver(true);
+          return;
+        }
+        state.level += 1;
+        state.status = "Advancing";
+        updateHud();
+        prepareLevel();
+        return;
+      }
+
+      state.enemyMoveTimer += dt;
+      state.enemyFireTimer += dt;
+
+      const speedScale = 1 + ((32 - alive.length) / 32) * 0.65;
+      if (state.enemyMoveTimer >= state.enemyMoveInterval / speedScale) {
+        state.enemyMoveTimer = 0;
+        let shiftDown = false;
+        for (const enemy of alive) {
+          const nextX = enemy.x + state.enemyDirection * 18;
+          if (nextX > WORLD.width - 58 || nextX < 58) {
+            shiftDown = true;
+            break;
+          }
+        }
+
+        for (const enemy of alive) {
+          if (shiftDown) {
+            enemy.y += 24;
+            enemy.bob += 0.45;
+          } else {
+            enemy.x += state.enemyDirection * 18;
+            enemy.bob += 0.35;
+          }
+        }
+        if (shiftDown) {
+          state.enemyDirection *= -1;
+        }
+      }
+
+      if (state.enemyFireTimer >= state.enemyFireInterval) {
+        state.enemyFireTimer = 0;
+        const shooters = pickShooters(alive);
+        const shooter = shooters[Math.floor(Math.random() * shooters.length)];
+        if (shooter) {
+          fireEnemyShot(shooter);
+        }
+      }
+
+      const invaded = alive.some((enemy) => enemy.y + enemy.height >= WORLD.groundY - 12);
+      if (invaded) {
+        showGameOver(false);
+      }
+    }
+
+    /**
+     * Selects eligible enemy shooters by column.
+     * @param {Array<{col: number, y: number}>} aliveEnemies - Currently alive enemies.
+     * @returns {Array<object>} Bottom-most enemy from each occupied column.
+     */
+    function pickShooters(aliveEnemies) {
+      const columns = new Map();
+      for (const enemy of aliveEnemies) {
+        const current = columns.get(enemy.col);
+        if (!current || enemy.y > current.y) {
+          columns.set(enemy.col, enemy);
+        }
+      }
+      return [...columns.values()];
+    }
+
+    /**
+     * Axis-aligned rectangle overlap test.
+     * @param {{x: number, y: number, width: number, height: number}} a
+     * @param {{x: number, y: number, width: number, height: number}} b
+     * @returns {boolean} True when rectangles intersect.
+     */
+    function rectsOverlap(a, b) {
+      return (
+        a.x < b.x + b.width &&
+        a.x + a.width > b.x &&
+        a.y < b.y + b.height &&
+        a.y + a.height > b.y
+      );
+    }
+
+    /**
+     * Resolves projectile collisions against enemies, shields, and player.
+     *
+     * Side effects:
+     * - Mutates entity life state and score.
+     * - Marks projectiles with `hit` before culling.
+     * - Produces particles, hit shake, HUD updates, and announcements.
+     */
+    function updateCollisions() {
+      for (const shot of state.playerShots) {
+        const shotRect = { x: shot.x - 2, y: shot.y - 8, width: 4, height: 16 };
+        for (const enemy of state.enemies) {
+          if (!enemy.alive) {
+            continue;
+          }
+          const enemyRect = {
+            x: enemy.x - enemy.width / 2,
+            y: enemy.y - enemy.height / 2,
+            width: enemy.width,
+            height: enemy.height
+          };
+          if (rectsOverlap(shotRect, enemyRect)) {
+            enemy.alive = false;
+            shot.hit = true;
+            state.score += enemy.score;
+            state.status = "Target Down";
+            spawnBurst(enemy.x, enemy.y, enemy.hue === "pink" ? "#ff97d2" : "#73f4df", 16, 1.1);
+            updateHud();
+            break;
+          }
+        }
+      }
+      state.playerShots = state.playerShots.filter((shot) => !shot.hit);
+
+      for (const shield of state.shields) {
+        for (const shot of state.playerShots) {
+          if (hitShield(shield, shot.x, shot.y, true)) {
+            shot.hit = true;
+          }
+        }
+        for (const shot of state.enemyShots) {
+          if (hitShield(shield, shot.x, shot.y, false)) {
+            shot.hit = true;
+          }
+        }
+      }
+      state.playerShots = state.playerShots.filter((shot) => !shot.hit);
+      state.enemyShots = state.enemyShots.filter((shot) => !shot.hit);
+
+      if (state.player) {
+        const playerRect = {
+          x: state.player.x - state.player.width / 2,
+          y: state.player.y - state.player.height / 2,
+          width: state.player.width,
+          height: state.player.height
+        };
+        for (const shot of state.enemyShots) {
+          const shotRect = {
+            x: shot.x - shot.width / 2,
+            y: shot.y - shot.height / 2,
+            width: shot.width,
+            height: shot.height
+          };
+          if (rectsOverlap(playerRect, shotRect)) {
+            shot.hit = true;
+            state.lives -= 1;
+            state.player.flash = 0.32;
+            state.shake = 0.35;
+            spawnBurst(state.player.x, state.player.y, "#ffd66b", 20, 1.3);
+            state.status = state.lives > 0 ? "Hull Hit" : "Lost";
+            updateHud();
+            if (state.lives <= 0) {
+              showGameOver(false);
+            } else {
+              state.player.x = WORLD.width / 2;
+              announce(`${state.lives} lives remaining`);
+            }
+          }
+        }
+      }
+      state.enemyShots = state.enemyShots.filter((shot) => !shot.hit);
+    }
+
+    /**
+     * Applies projectile damage to shield blocks at a point coordinate.
+     * @param {{x: number, y: number, blocks: Array<{x: number, y: number, hp: number}>}} shield
+     * @param {number} x - Projectile x coordinate.
+     * @param {number} y - Projectile y coordinate.
+     * @param {boolean} fromPlayer - Controls impact color for feedback.
+     * @returns {boolean} True when any shield block absorbed the hit.
+     */
+    function hitShield(shield, x, y, fromPlayer) {
+      for (const block of shield.blocks) {
+        if (block.hp <= 0) {
+          continue;
+        }
+        const bx = shield.x + block.x;
+        const by = shield.y + block.y;
+        if (x >= bx && x <= bx + 8 && y >= by && y <= by + 8) {
+          block.hp -= 1;
+          spawnBurst(bx + 4, by + 4, fromPlayer ? "#8dfffa" : "#ff97d2", 6, 0.45);
+          return true;
+        }
+      }
+      return false;
+    }
+
+    /**
+     * Integrates particle positions and lifetimes.
+     * @param {number} dt - Delta time in seconds.
+     */
+    function updateParticles(dt) {
+      for (const particle of state.particles) {
+        particle.x += particle.vx * dt;
+        particle.y += particle.vy * dt;
+        particle.vx *= 0.98;
+        particle.vy *= 0.98;
+        particle.life -= dt;
+      }
+      state.particles = state.particles.filter((particle) => particle.life > 0);
+    }
+
+    /**
+     * Scrolls stars downward and wraps them to the top for infinite parallax.
+     * @param {number} dt - Delta time in seconds.
+     */
+    function updateStars(dt) {
+      for (const star of state.stars) {
+        star.y += star.speed * dt;
+        if (star.y > WORLD.height) {
+          star.y = -4;
+          star.x = Math.random() * WORLD.width;
+        }
+      }
+    }
+
+    /**
+     * Runs one simulation step.
+     * @param {number} dt - Delta time in seconds, clamped upstream.
+     * Background and particles continue updating while paused to keep overlays lively.
+     */
+    function update(dt) {
+      updateStars(dt);
+      updateParticles(dt);
+      if (!state.running || state.gameOver || !state.player) {
+        return;
+      }
+      updatePlayer(dt);
+      updateProjectiles(dt);
+      updateEnemies(dt);
+      updateCollisions();
+      state.levelBannerTimer = Math.max(0, state.levelBannerTimer - dt);
+      state.shake = Math.max(0, state.shake - dt);
+    }
+
+    /** Draws the layered sky, stars, skyline silhouettes, and horizon line. */
+    function drawBackground() {
+      const sky = ctx.createLinearGradient(0, 0, 0, WORLD.height);
+      sky.addColorStop(0, "#09122d");
+      sky.addColorStop(0.45, "#140f3d");
+      sky.addColorStop(1, "#281349");
+      ctx.fillStyle = sky;
+      ctx.fillRect(0, 0, WORLD.width, WORLD.height);
+
+      const glow = ctx.createRadialGradient(WORLD.width * 0.5, 40, 30, WORLD.width * 0.5, 70, 320);
+      glow.addColorStop(0, "rgba(141,255,250,0.18)");
+      glow.addColorStop(1, "rgba(141,255,250,0)");
+      ctx.fillStyle = glow;
+      ctx.fillRect(0, 0, WORLD.width, WORLD.height);
+
+      for (const star of state.stars) {
+        ctx.globalAlpha = star.alpha;
+        ctx.fillStyle = "#f7fbff";
+        ctx.beginPath();
+        ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+
+      drawRetroCloud(125, 122, 0.22);
+      drawRetroCloud(816, 152, 0.18);
+      drawRetroCity();
+      drawGroundLine();
+    }
+
+    /**
+     * Draws a stylized cloud shape used in the retro skyline backdrop.
+     * @param {number} x - Cloud anchor x.
+     * @param {number} y - Cloud anchor y.
+     * @param {number} alpha - Opacity multiplier.
+     */
+    function drawRetroCloud(x, y, alpha) {
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = "#d7fcff";
+      ctx.beginPath();
+      ctx.ellipse(x, y, 74, 24, 0, 0, Math.PI * 2);
+      ctx.ellipse(x + 52, y - 8, 54, 20, 0, 0, Math.PI * 2);
+      ctx.ellipse(x - 38, y - 10, 46, 16, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    /**
+     * Draws decorative city towers behind gameplay actors.
+     * Visual-only function with no gameplay collision semantics.
+     */
+    function drawRetroCity() {
+      const towers = [
+        { x: 68, baseY: WORLD.groundY + 14, w: 50, h: 138, color: "#73f4df" },
+        { x: 178, baseY: WORLD.groundY + 18, w: 40, h: 118, color: "#ff97d2" },
+        { x: 284, baseY: WORLD.groundY + 16, w: 62, h: 152, color: "#8dfffa" },
+        { x: 404, baseY: WORLD.groundY + 22, w: 44, h: 102, color: "#ffd66b" },
+        { x: 572, baseY: WORLD.groundY + 20, w: 52, h: 130, color: "#73f4df" },
+        { x: 702, baseY: WORLD.groundY + 18, w: 70, h: 166, color: "#ff97d2" },
+        { x: 834, baseY: WORLD.groundY + 16, w: 54, h: 120, color: "#8dfffa" }
+      ];
+
+      ctx.save();
+      ctx.globalAlpha = 0.3;
+      for (const tower of towers) {
+        const topY = tower.baseY - tower.h;
+        ctx.fillStyle = tower.color;
+        pathRoundRect(tower.x, topY, tower.w, tower.h, 18);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.ellipse(tower.x + tower.w / 2, topY, tower.w * 0.58, 16, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.strokeStyle = "rgba(255,255,255,0.24)";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(tower.x + tower.w / 2, topY - 16);
+        ctx.lineTo(tower.x + tower.w / 2, topY - 48);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(tower.x + tower.w / 2, topY - 54, 7, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    /** Draws the skyline defense line used as a visual invasion threshold cue. */
+    function drawGroundLine() {
+      ctx.strokeStyle = "rgba(115,244,223,0.38)";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(0, WORLD.groundY);
+      ctx.lineTo(WORLD.width, WORLD.groundY);
+      ctx.stroke();
+    }
+
+    /** Draws the player craft; flash animation indicates recent damage/fire. */
+    function drawPlayer() {
+      if (!state.player) {
+        return;
+      }
+      const { x, y, width, height, flash } = state.player;
+      ctx.save();
+      if (flash > 0) {
+        ctx.globalAlpha = 0.55 + Math.sin(performance.now() * 0.05) * 0.2;
+      }
+
+      ctx.fillStyle = "#9afaf7";
+      ctx.beginPath();
+      ctx.ellipse(x, y + 4, width * 0.42, height * 0.52, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = "#ff97d2";
+      ctx.beginPath();
+      ctx.ellipse(x, y - 6, width * 0.25, height * 0.45, 0, Math.PI, 0);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.fillStyle = "#dffcff";
+      ctx.beginPath();
+      ctx.arc(x, y - 4, 8, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.strokeStyle = "rgba(255,255,255,0.55)";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(x - width * 0.22, y + 2);
+      ctx.lineTo(x + width * 0.22, y + 2);
+      ctx.stroke();
+
+      ctx.fillStyle = "#ffd66b";
+      ctx.beginPath();
+      ctx.moveTo(x - 14, y + 12);
+      ctx.lineTo(x - 4, y + 28);
+      ctx.lineTo(x, y + 16);
+      ctx.lineTo(x + 4, y + 28);
+      ctx.lineTo(x + 14, y + 12);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+
+    /**
+     * Draws one enemy saucer if alive.
+     * @param {{alive: boolean, x: number, y: number, bob: number, hue: string}} enemy
+     */
+    function drawEnemy(enemy) {
+      if (!enemy.alive) {
+        return;
+      }
+      const wobble = Math.sin(enemy.bob) * 2.6;
+      const x = enemy.x;
+      const y = enemy.y + wobble;
+      const body = enemy.hue === "pink" ? "#ff97d2" : "#73f4df";
+      const dome = enemy.hue === "pink" ? "#ffd3ea" : "#defdfb";
+
+      ctx.fillStyle = body;
+      ctx.beginPath();
+      ctx.ellipse(x, y + 4, 24, 12, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = dome;
+      ctx.beginPath();
+      ctx.ellipse(x, y - 2, 12, 9, 0, Math.PI, 0);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.strokeStyle = "rgba(13,19,61,0.5)";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(x - 17, y + 16);
+      ctx.lineTo(x - 11, y + 8);
+      ctx.moveTo(x + 17, y + 16);
+      ctx.lineTo(x + 11, y + 8);
+      ctx.moveTo(x - 8, y + 16);
+      ctx.lineTo(x - 4, y + 8);
+      ctx.moveTo(x + 8, y + 16);
+      ctx.lineTo(x + 4, y + 8);
+      ctx.stroke();
+
+      ctx.fillStyle = "#0d1238";
+      ctx.beginPath();
+      ctx.arc(x - 5, y + 2, 2, 0, Math.PI * 2);
+      ctx.arc(x + 5, y + 2, 2, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    /** Draws active player and enemy projectiles. */
+    function drawShots() {
+      for (const shot of state.playerShots) {
+        ctx.fillStyle = "#8dfffa";
+        ctx.fillRect(shot.x - 2, shot.y - 10, 4, 16);
+      }
+      for (const shot of state.enemyShots) {
+        ctx.fillStyle = "#ff97d2";
+        ctx.fillRect(shot.x - shot.width / 2, shot.y - shot.height / 2, shot.width, shot.height);
+      }
+    }
+
+    /** Draws all remaining shield blocks. Destroyed blocks are skipped. */
+    function drawShields() {
+      for (const shield of state.shields) {
+        for (const block of shield.blocks) {
+          if (block.hp <= 0) {
+            continue;
+          }
+          const bx = shield.x + block.x;
+          const by = shield.y + block.y;
+          ctx.fillStyle = "#8cf6e3";
+          ctx.fillRect(bx, by, 8, 8);
+        }
+      }
+    }
+
+    /** Draws transient particle effects with alpha based on remaining life. */
+    function drawParticles() {
+      for (const particle of state.particles) {
+        ctx.globalAlpha = Math.max(0, particle.life * 1.8);
+        ctx.fillStyle = particle.color;
+        ctx.fillRect(particle.x, particle.y, 3, 3);
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    /** Draws the temporary per-wave banner shown at the start of each level. */
+    function drawLevelBanner() {
+      if (state.levelBannerTimer <= 0) {
+        return;
+      }
+      ctx.save();
+      ctx.globalAlpha = Math.min(1, state.levelBannerTimer);
+      ctx.fillStyle = "rgba(13,19,61,0.72)";
+      pathRoundRect(WORLD.width / 2 - 104, 24, 208, 44, 20);
+      ctx.fill();
+      ctx.strokeStyle = "rgba(141,255,250,0.28)";
+      ctx.stroke();
+      ctx.fillStyle = "#8dfffa";
+      ctx.font = "700 22px Trebuchet MS";
+      ctx.textAlign = "center";
+      ctx.fillText(`Wave ${state.level}`, WORLD.width / 2, 53);
+      ctx.restore();
+    }
+
+    /**
+     * Renders one frame from current game state.
+     * Camera shake is simulated by random canvas translation while `state.shake` is positive.
+     */
+    function render() {
+      ctx.save();
+      if (state.shake > 0) {
+        const offset = state.shake * 8;
+        ctx.translate((Math.random() - 0.5) * offset, (Math.random() - 0.5) * offset);
+      }
+
+      drawBackground();
+      drawShields();
+      for (const enemy of state.enemies) {
+        drawEnemy(enemy);
+      }
+      drawPlayer();
+      drawShots();
+      drawParticles();
+      drawLevelBanner();
+      ctx.restore();
+    }
+
+    /**
+     * requestAnimationFrame callback.
+     * @param {DOMHighResTimeStamp} time - RAF timestamp in milliseconds.
+     * Delta time is clamped to reduce simulation spikes after tab throttling.
+     */
+    function frame(time) {
+      const dt = Math.min(0.033, (time - state.lastTime) / 1000 || 0);
+      state.lastTime = time;
+      update(dt);
+      render();
+      requestAnimationFrame(frame);
+    }
+
+    /**
+     * Handles keyboard state transitions for movement and firing.
+     * @param {KeyboardEvent} event - Native keyboard event.
+     * @param {boolean} pressed - True on keydown, false on keyup.
+     * Prevents default browser behavior for gameplay keys to avoid page scrolling.
+     */
+    function handleKeyChange(event, pressed) {
+      const key = event.key.toLowerCase();
+      if (key === "arrowleft" || key === "a") {
+        state.keys.left = pressed;
+      } else if (key === "arrowright" || key === "d") {
+        state.keys.right = pressed;
+      } else if (key === " " || key === "spacebar") {
+        state.keys.fire = pressed;
+        if (pressed) {
+          if (!state.started) {
+            resetForNewGame();
+          } else if (state.gameOver) {
+            resetForNewGame();
+          }
+        }
+      } else if (key === "enter" && pressed && state.gameOver) {
+        resetForNewGame();
+      }
+      if (["arrowleft", "arrowright", " ", "spacebar", "a", "d", "enter"].includes(key)) {
+        event.preventDefault();
+      }
+    }
+
+    /**
+     * Attaches pointer events to on-screen touch controls.
+     * Pointer up/leave/cancel all release the latched action for robust mobile input.
+     */
+    function bindTouchControls() {
+      const buttons = document.querySelectorAll("[data-touch]");
+      for (const button of buttons) {
+        const action = button.getAttribute("data-touch");
+        const setTouch = (pressed) => {
+          touchState[action] = pressed;
+          if (action === "fire" && pressed && (!state.started || state.gameOver)) {
+            resetForNewGame();
+          }
+        };
+        button.addEventListener("pointerdown", () => setTouch(true));
+        button.addEventListener("pointerup", () => setTouch(false));
+        button.addEventListener("pointerleave", () => setTouch(false));
+        button.addEventListener("pointercancel", () => setTouch(false));
+      }
+    }
+
+    startButton.addEventListener("click", resetForNewGame);
+    restartButton.addEventListener("click", resetForNewGame);
+
+    window.addEventListener("keydown", (event) => handleKeyChange(event, true), { passive: false });
+    window.addEventListener("keyup", (event) => handleKeyChange(event, false), { passive: false });
+
+    bindTouchControls();
+    state.stars = createStars();
+    state.player = createPlayer();
+    state.shields = createShields();
+    updateHud();
+    showStartOverlay();
+    requestAnimationFrame(frame);
+  </script>
+
+
+</body></html>

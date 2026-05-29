@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Space Invaders 3D</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:#000; overflow:hidden; }
+#hud { position:fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:10; }
+</style>
+</head>
+<body>
+<canvas id="hud"></canvas>
+<script src="https://cdn.jsdelivr.net/npm/three@0.134.0/build/three.min.js"></script>
+<script>
+'use strict';
+
+/* ══ CONSTANTS ══════════════════════════════════════════════════════════ */
+var COLS=11,ROWS=5,COL_SP=32,ROW_SP=24;
+var PLAYER_Z=118, INV_FRONT_Z=-48, SHIELD_Z=58, UFO_Z=-115, FIELD_HW=185;
+var PBSPEED=6.5, IBSPEED=2.2;
+var INV_TYPES=[
+  {color:0xcc44ee,emissive:0x220033,pts:30},
+  {color:0x22ddee,emissive:0x001122,pts:20},
+  {color:0x44ee66,emissive:0x002211,pts:10}
+];
+
+/* ══ STATE ══════════════════════════════════════════════════════════════ */
+var ST={START:0,PLAY:1,WAVE_CLEAR:2,GAMEOVER:3};
+var state=ST.START, score=0, hiScore=0, lives=3, wave=1, stateTimer=0;
+
+/* ══ INPUT ══════════════════════════════════════════════════════════════ */
+var keys={}, justSpace=false;
+document.addEventListener('keydown',function(e){
+  if(!keys[e.code]&&e.code==='Space') justSpace=true;
+  keys[e.code]=true;
+  if(['Space','ArrowLeft','ArrowRight'].includes(e.code)) e.preventDefault();
+});
+document.addEventListener('keyup',function(e){ keys[e.code]=false; });
+
+/* ══ AUDIO ══════════════════════════════════════════════════════════════ */
+var AC=null;
+function getAC(){ if(!AC) AC=new (window.AudioContext||window.webkitAudioContext)(); return AC; }
+function tone(f,d,t,v){ t=t||'square'; v=v||0.07;
+  try{ var ac=getAC(),o=ac.createOscillator(),g=ac.createGain();
+    o.connect(g); g.connect(ac.destination); o.type=t; o.frequency.value=f;
+    g.gain.setValueAtTime(v,ac.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0001,ac.currentTime+d);
+    o.start(); o.stop(ac.currentTime+d+0.01); }catch(e){} }
+var _mt=0;
+function sfxShoot(){ tone(900,0.07,'square',0.06); }
+function sfxHit(){ tone(220,0.10,'sawtooth',0.09); setTimeout(function(){tone(140,0.10,'sawtooth',0.06);},55); }
+function sfxDie(){ for(var i=0;i<5;i++)(function(j){setTimeout(function(){tone(340-j*40,0.09,'sawtooth',0.10);},j*80);})(i); }
+function sfxWave(){ tone(660,0.14,'square',0.07); setTimeout(function(){tone(880,0.14,'square',0.07);},160); setTimeout(function(){tone(1100,0.22,'square',0.07);},320); }
+function sfxMove(){ tone([155,125,95,75][_mt++%4],0.04,'square',0.04); }
+
+/* ══ RENDERER — performance-first ══════════════════════════════════════ */
+var renderer=new THREE.WebGLRenderer({antialias:false});
+renderer.setPixelRatio(1);           // no supersampling
+renderer.setSize(window.innerWidth,window.innerHeight);
+renderer.shadowMap.enabled=false;    // shadows OFF
+renderer.domElement.style.cssText='position:fixed;top:0;left:0;z-index:0;';
+document.body.insertBefore(renderer.domElement,document.getElementById('hud'));
+
+var scene=new THREE.Scene();
+scene.background=new THREE.Color(0x020210);
+scene.fog=new THREE.FogExp2(0x020210,0.0014);
+
+var camera=new THREE.PerspectiveCamera(55,window.innerWidth/window.innerHeight,0.1,2000);
+camera.position.set(0,148,268);
+camera.lookAt(0,0,5);
+var camLeanX=0;
+
+window.addEventListener('resize',function(){
+  renderer.setSize(window.innerWidth,window.innerHeight);
+  camera.aspect=window.innerWidth/window.innerHeight;
+  camera.updateProjectionMatrix();
+  var h=document.getElementById('hud');
+  h.width=window.innerWidth; h.height=window.innerHeight;
+});
+
+/* ══ LIGHTS — no shadow maps ════════════════════════════════════════════ */
+scene.add(new THREE.AmbientLight(0x223366,1.4));
+var sun=new THREE.DirectionalLight(0xffeedd,1.6);
+sun.position.set(60,120,80);
+scene.add(sun);
+scene.add(new THREE.HemisphereLight(0x2244aa,0x000022,0.6));
+
+/* ══ FLOOR + GRID ═══════════════════════════════════════════════════════ */
+var flr=new THREE.Mesh(
+  new THREE.PlaneGeometry(900,700),
+  new THREE.MeshLambertMaterial({color:0x02021a}));
+flr.rotation.x=-Math.PI/2; flr.position.y=-14; scene.add(flr);
+var grid=new THREE.GridHelper(900,45,0x0c0c33,0x080820);
+grid.position.y=-13.9; scene.add(grid);
+
+/* ══ STARS ══════════════════════════════════════════════════════════════ */
+(function(){
+  var N=2000,pos=new Float32Array(N*3);
+  for(var i=0;i<N;i++){
+    var th=Math.random()*Math.PI*2,ph=Math.acos(2*Math.random()-1),r=500+Math.random()*500;
+    pos[i*3]=r*Math.sin(ph)*Math.cos(th);
+    pos[i*3+1]=r*Math.abs(Math.cos(ph))+30;
+    pos[i*3+2]=r*Math.sin(ph)*Math.sin(th);
+  }
+  var g=new THREE.BufferGeometry();
+  g.setAttribute('position',new THREE.BufferAttribute(pos,3));
+  scene.add(new THREE.Points(g,new THREE.PointsMaterial({color:0xffffff,size:1.6,sizeAttenuation:true})));
+})();
+
+/* ══ MATERIAL HELPER ════════════════════════════════════════════════════ */
+function mL(col,emi){ return new THREE.MeshLambertMaterial({color:col,emissive:emi||0}); }
+function mP(col,emi,spec,shine){
+  return new THREE.MeshPhongMaterial({color:col,emissive:emi||0,specular:spec||0x222222,shininess:shine||50});
+}
+
+/* ══ SHARED DUMMY for InstancedMesh ════════════════════════════════════ */
+var dummy=new THREE.Object3D();
+
+/* ══ INVADER INSTANCED MESHES (3 draw calls for 55 invaders) ═══════════ */
+// Type 0 Squid  – tapered cylinder  (11 instances)
+// Type 1 Crab   – wide flat disc    (22 instances)
+// Type 2 Octopus– low-poly gem      (22 instances)
+var invaderMeshes=[
+  new THREE.InstancedMesh(new THREE.CylinderGeometry(3,9,20,8),  mL(INV_TYPES[0].color,INV_TYPES[0].emissive), 11),
+  new THREE.InstancedMesh(new THREE.CylinderGeometry(14,11,8,10),mL(INV_TYPES[1].color,INV_TYPES[1].emissive), 22),
+  new THREE.InstancedMesh(new THREE.IcosahedronGeometry(9,0),    mL(INV_TYPES[2].color,INV_TYPES[2].emissive), 22)
+];
+invaderMeshes.forEach(function(im){
+  im.frustumCulled=false;
+  dummy.scale.setScalar(0); dummy.updateMatrix();
+  for(var k=0;k<im.count;k++) im.setMatrixAt(k,dummy.matrix);
+  im.instanceMatrix.needsUpdate=true;
+  scene.add(im);
+});
+
+/* ══ SHIELD INSTANCED MESH (1 draw call for ~128 blocks) ═══════════════ */
+var MAX_SB=140;
+var shieldIM=new THREE.InstancedMesh(
+  new THREE.BoxGeometry(5,5,5),
+  mL(0x00dd44,0x002211),
+  MAX_SB);
+shieldIM.frustumCulled=false;
+dummy.scale.setScalar(0); dummy.updateMatrix();
+for(var k=0;k<MAX_SB;k++) shieldIM.setMatrixAt(k,dummy.matrix);
+shieldIM.instanceMatrix.needsUpdate=true;
+scene.add(shieldIM);
+
+/* ══ PLAYER MODEL (Group — only 1 PointLight) ══════════════════════════ */
+function buildPlayer(){
+  var g=new THREE.Group();
+  var hull=new THREE.Mesh(new THREE.CylinderGeometry(2,8,26,8), mP(0x1166dd,0x001a55,0x4499ff,80));
+  hull.rotation.x=-Math.PI/2; hull.position.z=-2; g.add(hull);
+  [-1,1].forEach(function(s){
+    var w=new THREE.Mesh(new THREE.BoxGeometry(22,2.5,12), mP(0x0944cc,0x001044,0x3377cc,50));
+    w.position.set(s*18,-0.5,5); w.rotation.y=s*0.15; g.add(w);
+    var wt=new THREE.Mesh(new THREE.BoxGeometry(6,2,7), mP(0x0944cc,0x001044,0x3377cc,50));
+    wt.position.set(s*28,0,6); g.add(wt);
+  });
+  var dome=new THREE.Mesh(new THREE.SphereGeometry(4.5,8,6), mP(0x99ddff,0x224466,0xffffff,120));
+  dome.position.set(0,3.5,-1); g.add(dome);
+  var can=new THREE.Mesh(new THREE.CylinderGeometry(1.3,1.3,20,6), mP(0x88aacc,0x001133,0xffffff,80));
+  can.rotation.x=Math.PI/2; can.position.z=-21; g.add(can);
+  var tip=new THREE.Mesh(new THREE.CylinderGeometry(1.8,1.3,4,6), mP(0x00ccff,0x00aacc,0xffffff,120));
+  tip.rotation.x=Math.PI/2; tip.position.z=-30; g.add(tip);
+  var eng=new THREE.Mesh(new THREE.CylinderGeometry(3.5,5.5,7,8), mP(0xff7700,0xff5500,0xffcc00,120));
+  eng.rotation.x=Math.PI/2; eng.position.z=13; g.add(eng);
+  // Single engine PointLight — the only PointLight in the whole scene
+  var el=new THREE.PointLight(0xff8800,2.5,40);
+  el.position.z=16; g.add(el);
+  g.userData.engineLight=el;
+  g.position.z=PLAYER_Z;
+  return g;
+}
+
+/* ══ UFO MODEL (no PointLight) ══════════════════════════════════════════ */
+function buildUFO(){
+  var g=new THREE.Group();
+  var disk=new THREE.Mesh(new THREE.CylinderGeometry(20,24,5,16), mP(0xaa2222,0x440000,0xff5555,80));
+  disk.position.y=3; g.add(disk);
+  var dome=new THREE.Mesh(
+    new THREE.SphereGeometry(12,10,8,0,Math.PI*2,0,Math.PI/2),
+    mP(0xddbb00,0x664400,0xffff88,120));
+  dome.position.y=5; g.add(dome);
+  var lm=new THREE.MeshPhongMaterial({color:0xffff00,emissive:0xffff00});
+  for(var i=0;i<8;i++){
+    var a=(i/8)*Math.PI*2;
+    var l=new THREE.Mesh(new THREE.SphereGeometry(1.8,5,4),lm.clone());
+    l.position.set(Math.cos(a)*21,5,Math.sin(a)*21); g.add(l);
+  }
+  g.position.z=UFO_Z; g.visible=false;
+  return g;
+}
+
+/* ══ BULLETS (emissive only — no PointLight) ════════════════════════════ */
+function mkBullet(x,z,isPlayer){
+  var col=isPlayer?0x00ffff:0xff6600;
+  var emi=isPlayer?0x00cccc:0xff4400;
+  var mesh=new THREE.Mesh(
+    new THREE.CylinderGeometry(0.8,0.8,14,4),
+    mP(col,emi,0xffffff,100));
+  mesh.rotation.x=Math.PI/2;
+  mesh.position.set(x,1,z);
+  scene.add(mesh);
+  return {mesh:mesh,vz:isPlayer?-PBSPEED:IBSPEED+wave*0.18,alive:true,owner:isPlayer?'p':'i'};
+}
+
+/* ══ PARTICLES (10 per explosion, no lights) ════════════════════════════ */
+var particles=[];
+function boom(x,y,z,color){
+  for(var i=0;i<10;i++){
+    var a=Math.random()*Math.PI*2, b=Math.random()*Math.PI, s=Math.random()*4+0.8;
+    var sz=Math.random()*2.5+1;
+    var mesh=new THREE.Mesh(
+      new THREE.BoxGeometry(sz,sz,sz),
+      new THREE.MeshBasicMaterial({color:color,transparent:true,opacity:1}));
+    mesh.position.set(x,y,z);
+    scene.add(mesh);
+    particles.push({mesh:mesh,
+      vx:Math.sin(b)*Math.cos(a)*s, vy:Math.abs(Math.cos(b))*s+0.6, vz:Math.sin(b)*Math.sin(a)*s,
+      life:1,decay:0.028+Math.random()*0.020});
+  }
+}
+function updateParticles(){
+  for(var i=particles.length-1;i>=0;i--){
+    var p=particles[i];
+    p.mesh.position.x+=p.vx; p.mesh.position.y+=p.vy; p.mesh.position.z+=p.vz;
+    p.vy-=0.13; p.life-=p.decay;
+    p.mesh.material.opacity=Math.max(0,p.life);
+    if(p.life<=0){
+      scene.remove(p.mesh); p.mesh.geometry.dispose(); p.mesh.material.dispose();
+      particles.splice(i,1);
+    }
+  }
+}
+
+
+/* ══ INVADER DATA STRUCTURES ════════════════════════════════════════════ */
+var invaders=[], invAlive=0;
+function invRow(r){ return r===0?0:(r<=2?1:2); }
+function invX(col){ return (col-(COLS-1)/2)*COL_SP; }
+function invZ(row){ return INV_FRONT_Z - row*ROW_SP; }
+
+var invOffsX=0, invOffsZ=0, invMoveDir=1, invMoveTimer=0, invMovePeriod=0.88;
+var invFireTimer=0, invFireCooldown=1.1;
+
+function createInvaders(){
+  invaders=[]; invAlive=0;
+  var typeIdx=[0,0,0,0,0,0,0,0,0,0,0]; // per-type instance counters
+  var counts=[0,0,0];
+  for(var r=0;r<ROWS;r++){
+    for(var c=0;c<COLS;c++){
+      var tp=invRow(r);
+      invaders.push({
+        type:tp,row:r,col:c,alive:true,
+        x:invX(c),y:0,z:invZ(r),
+        rotY:0,bob:Math.random()*Math.PI*2,
+        instanceIdx:counts[tp]++
+      });
+      invAlive++;
+    }
+  }
+}
+
+function refreshInvaderInstances(){
+  for(var i=0;i<invaders.length;i++){
+    var inv=invaders[i];
+    if(!inv.alive){ dummy.scale.setScalar(0); dummy.updateMatrix(); }
+    else{
+      dummy.position.set(inv.x+invOffsX, inv.y + Math.sin(inv.bob)*1.6, inv.z+invOffsZ);
+      dummy.rotation.y=inv.rotY;
+      dummy.scale.setScalar(1);
+      dummy.updateMatrix();
+    }
+    invaderMeshes[inv.type].setMatrixAt(inv.instanceIdx,dummy.matrix);
+  }
+  invaderMeshes.forEach(function(im){ im.instanceMatrix.needsUpdate=true; });
+}
+
+function stepInvaders(dt){
+  invMoveTimer+=dt;
+  var spd=Math.max(0.18,invMovePeriod-wave*0.06-((ROWS*COLS-invAlive)/55)*0.38);
+  if(invMoveTimer<spd) return;
+  invMoveTimer=0;
+  invOffsX+=invMoveDir*16;
+  sfxMove();
+  var minX=Infinity,maxX=-Infinity,maxZ=-Infinity;
+  for(var i=0;i<invaders.length;i++){
+    if(!invaders[i].alive) continue;
+    var wx=invaders[i].x+invOffsX;
+    minX=Math.min(minX,wx); maxX=Math.max(maxX,wx); maxZ=Math.max(maxZ,invaders[i].z);
+  }
+  if(maxX>FIELD_HW-8){ invMoveDir=-1; invOffsX-=16; invOffsZ+=14; }
+  else if(minX<-FIELD_HW+8){ invMoveDir=1; invOffsX+=16; invOffsZ+=14; }
+  if(invOffsZ>175){ endGame(); }
+}
+
+/* ══ SHIELD DATA ════════════════════════════════════════════════════════ */
+var shieldBlocks=[], sbIdx=0;
+function buildShieldPattern(cx,cz){
+  // 7x4 pattern — middle gap
+  var pat=[
+    [1,1,1,1,1,1,1],
+    [1,1,1,1,1,1,1],
+    [1,1,0,0,0,1,1],
+    [1,0,0,0,0,0,1]
+  ];
+  for(var rw=0;rw<4;rw++){
+    for(var cl=0;cl<7;cl++){
+      if(!pat[rw][cl]) continue;
+      shieldBlocks.push({
+        alive:true, hp:3, instanceIdx:sbIdx++,
+        x:cx+(cl-3)*6, y:(3-rw)*6-3, z:cz
+      });
+    }
+  }
+}
+
+function createShields(){
+  shieldBlocks=[]; sbIdx=0;
+  var shields4=[-135,-45,45,135];
+  shields4.forEach(function(cx){ buildShieldPattern(cx,SHIELD_Z); });
+  refreshShieldInstances();
+}
+
+function refreshShieldInstances(){
+  for(var i=0;i<shieldBlocks.length;i++){
+    var sb=shieldBlocks[i];
+    if(!sb.alive){ dummy.scale.setScalar(0); dummy.updateMatrix(); }
+    else{
+      dummy.position.set(sb.x,sb.y,sb.z);
+      var s=0.6+sb.hp*0.14;
+      dummy.scale.set(s,s,s); dummy.rotation.set(0,0,0);
+      dummy.updateMatrix();
+    }
+    shieldIM.setMatrixAt(sb.instanceIdx,dummy.matrix);
+  }
+  // colour by HP
+  for(var i=0;i<shieldBlocks.length;i++){
+    var sb=shieldBlocks[i];
+    var c=new THREE.Color();
+    c.setHSL(0.38,1.0,sb.alive?(0.15+sb.hp*0.12):0);
+    shieldIM.setColorAt(sb.instanceIdx,c);
+  }
+  shieldIM.instanceMatrix.needsUpdate=true;
+  if(shieldIM.instanceColor) shieldIM.instanceColor.needsUpdate=true;
+}
+
+/* ══ PLAYER ════════════════════════════════════════════════════════════ */
+var playerMesh=buildPlayer(), playerX=0, playerVX=0;
+scene.add(playerMesh);
+var pCanFire=true, pFireCool=0;
+var bullets=[];
+
+function movePB(dt){
+  var spd=220;
+  playerVX*=0.78;
+  if(keys['ArrowLeft'])  playerVX-=spd*dt;
+  if(keys['ArrowRight']) playerVX+=spd*dt;
+  playerX=Math.max(-FIELD_HW+10,Math.min(FIELD_HW-10,playerX+playerVX*dt));
+  playerMesh.position.x=playerX;
+  playerMesh.rotation.z=-playerVX*0.002;
+  pFireCool=Math.max(0,pFireCool-dt);
+  if((justSpace||keys['Space'])&&pFireCool<=0){
+    bullets.push(mkBullet(playerX,PLAYER_Z-14,true));
+    pFireCool=0.28; sfxShoot();
+  }
+  justSpace=false;
+}
+
+/* ══ UFO ═══════════════════════════════════════════════════════════════ */
+var ufoMesh=buildUFO();
+scene.add(ufoMesh);
+var ufoActive=false, ufoDir=1, ufoX=0;
+var ufoTimer=0, ufoDelay=18;
+
+function stepUFO(dt){
+  ufoTimer+=dt;
+  if(!ufoActive&&ufoTimer>ufoDelay){
+    ufoActive=true; ufoTimer=0; ufoDelay=14+Math.random()*12;
+    ufoDir=(Math.random()<0.5)?1:-1; ufoX=ufoDir*-FIELD_HW;
+    ufoMesh.visible=true; ufoMesh.position.x=ufoX; ufoMesh.position.y=30;
+  }
+  if(!ufoActive) return;
+  ufoX+=ufoDir*55*dt;
+  ufoMesh.position.x=ufoX;
+  if(Math.abs(ufoX)>FIELD_HW+28){ ufoMesh.visible=false; ufoActive=false; }
+}
+
+/* ══ COLLISION ══════════════════════════════════════════════════════════ */
+function checkBullets(dt){
+  for(var bi=bullets.length-1;bi>=0;bi--){
+    var b=bullets[bi];
+    if(!b.alive) continue;
+    b.mesh.position.z+=b.vz;
+    var bx=b.mesh.position.x, bz=b.mesh.position.z;
+
+    // off-screen
+    if(bz<-180||bz>140){
+      scene.remove(b.mesh); bullets.splice(bi,1); continue;
+    }
+    var hit=false;
+
+    // player bullet hits invader
+    if(b.owner==='p'){
+      for(var ii=0;ii<invaders.length;ii++){
+        var inv=invaders[ii];
+        if(!inv.alive) continue;
+        var ix=inv.x+invOffsX, iz=inv.z+invOffsZ;
+        if(Math.abs(bx-ix)<14&&Math.abs(bz-iz)<16){
+          inv.alive=false; invAlive--;
+          score+=INV_TYPES[inv.type].pts*(1+Math.floor(wave/2));
+          boom(ix,4,iz,INV_TYPES[inv.type].color); sfxHit();
+          hit=true; break;
+        }
+      }
+      // player bullet hits UFO
+      if(!hit&&ufoActive){
+        if(Math.abs(bx-ufoMesh.position.x)<22&&Math.abs(bz-UFO_Z)<10){
+          var bonus=50*(1+Math.floor(Math.random()*4)); score+=bonus;
+          boom(ufoMesh.position.x,22,UFO_Z,0xffcc00); sfxHit();
+          ufoMesh.visible=false; ufoActive=false; hit=true;
+        }
+      }
+    }
+
+    // invader bullet hits player
+    if(!hit&&b.owner==='i'){
+      if(Math.abs(bx-playerX)<11&&Math.abs(bz-PLAYER_Z)<14){
+        boom(playerX,3,PLAYER_Z,0x2288ff); sfxDie();
+        lives--; hit=true;
+        if(lives<=0){ endGame(); return; }
+        playerX=0; playerVX=0;
+      }
+    }
+
+    // shield check
+    if(!hit){
+      for(var si=shieldBlocks.length-1;si>=0;si--){
+        var sb=shieldBlocks[si];
+        if(!sb.alive) continue;
+        if(Math.abs(bx-sb.x)<5&&Math.abs(bz-sb.z)<6&&Math.abs(b.mesh.position.y-sb.y)<6){
+          sb.hp--;
+          if(sb.hp<=0) sb.alive=false;
+          refreshShieldInstances(); hit=true; break;
+        }
+      }
+    }
+
+    if(hit){ scene.remove(b.mesh); b.mesh.geometry.dispose(); b.mesh.material.dispose(); bullets.splice(bi,1); }
+  }
+}
+
+function invaderShoot(dt){
+  invFireTimer+=dt;
+  if(invFireTimer<Math.max(0.35,invFireCooldown-wave*0.12)) return;
+  invFireTimer=0;
+  var alive=invaders.filter(function(i){return i.alive;});
+  if(!alive.length) return;
+  var shooter=alive[Math.floor(Math.random()*alive.length)];
+  bullets.push(mkBullet(shooter.x+invOffsX,shooter.z+invOffsZ+6,false));
+}
+
+/* ══ WAVE ══════════════════════════════════════════════════════════════ */
+function nextWave(){
+  wave++;
+  bullets.forEach(function(b){ scene.remove(b.mesh); });
+  bullets=[];
+  invOffsX=0; invOffsZ=0; invMoveDir=1; invMoveTimer=0;
+  createInvaders(); createShields(); sfxWave();
+}
+
+function endGame(){
+  state=ST.GAMEOVER; stateTimer=0;
+  if(score>hiScore) hiScore=score;
+}
+
+/* ══ HUD ════════════════════════════════════════════════════════════════ */
+var hc=document.getElementById('hud');
+hc.width=window.innerWidth; hc.height=window.innerHeight;
+var hx=hc.getContext('2d');
+
+function drawHUD(){
+  hx.clearRect(0,0,hc.width,hc.height);
+  hx.font='bold 20px monospace'; hx.fillStyle='#00ffcc';
+  hx.fillText('SCORE '+score,20,36);
+  hx.fillStyle='#aaccff'; hx.textAlign='center';
+  hx.fillText('HI '+hiScore, hc.width/2,36);
+  hx.textAlign='right'; hx.fillStyle='#ffaa44';
+  hx.fillText('WAVE '+wave+'  ♥'.repeat(lives),hc.width-20,36);
+  hx.textAlign='left';
+  if(state===ST.START){
+    overlay('SPACE  INVADERS  3D','PRESS SPACE TO PLAY','↔ MOVE   SPACE SHOOT');
+  } else if(state===ST.WAVE_CLEAR){
+    overlay('WAVE '+(wave-1)+' CLEARED!','INCOMING WAVE '+wave,'');
+  } else if(state===ST.GAMEOVER){
+    overlay('GAME  OVER','SCORE '+score,'PRESS SPACE TO RESTART');
+  }
+}
+
+function overlay(l1,l2,l3){
+  var cx=hc.width/2, cy=hc.height/2;
+  hx.fillStyle='rgba(0,0,20,0.60)';
+  hx.beginPath();
+  hx.roundRect ? hx.roundRect(cx-300,cy-90,600,180,16) : null;
+  hx.fillRect(cx-290,cy-80,580,160);
+  hx.textAlign='center';
+  hx.font='bold 38px monospace'; hx.fillStyle='#00ffff';
+  hx.fillText(l1,cx,cy-24);
+  hx.font='bold 22px monospace'; hx.fillStyle='#ffffff';
+  hx.fillText(l2,cx,cy+12);
+  hx.font='18px monospace'; hx.fillStyle='#aaaaff';
+  hx.fillText(l3,cx,cy+44);
+  hx.textAlign='left';
+}
+
+/* ══ GAME INIT ══════════════════════════════════════════════════════════ */
+function initGame(){
+  score=0; lives=3; wave=1;
+  invOffsX=0; invOffsZ=0; invMoveDir=1; invMoveTimer=0;
+  invFireTimer=0;
+  bullets.forEach(function(b){ scene.remove(b.mesh); }); bullets=[];
+  particles.forEach(function(p){ scene.remove(p.mesh); }); particles=[];
+  createInvaders(); createShields();
+  playerX=0; playerVX=0; playerMesh.position.x=0;
+  ufoMesh.visible=false; ufoActive=false; ufoTimer=0;
+  sfxWave();
+}
+
+/* ══ MAIN LOOP ══════════════════════════════════════════════════════════ */
+var prev=performance.now();
+var moveT=0;
+
+function loop(now){
+  requestAnimationFrame(loop);
+  var dt=Math.min((now-prev)/1000,0.05); prev=now;
+
+  if(state===ST.START){
+    if(justSpace||keys['Space']){ justSpace=false; initGame(); state=ST.PLAY; }
+    else justSpace=false;
+  } else if(state===ST.PLAY){
+    movePB(dt);
+    stepInvaders(dt);
+    stepUFO(dt);
+    invaderShoot(dt);
+    checkBullets(dt);
+    updateParticles();
+    refreshInvaderInstances();
+
+    // bob rotation
+    moveT+=dt;
+    for(var i=0;i<invaders.length;i++) if(invaders[i].alive) invaders[i].bob+=dt*1.8;
+
+    // engine glow pulse
+    playerMesh.userData.engineLight.intensity=2.0+Math.sin(moveT*12)*0.6;
+
+    // UFO spin
+    if(ufoActive) ufoMesh.rotation.y+=dt*1.4;
+
+    if(invAlive===0){ wave++; state=ST.WAVE_CLEAR; stateTimer=0; sfxWave(); }
+
+  } else if(state===ST.WAVE_CLEAR){
+    stateTimer+=dt;
+    if(stateTimer>2.6){
+      bullets.forEach(function(b){ scene.remove(b.mesh); }); bullets=[];
+      invOffsX=0; invOffsZ=0; invMoveDir=1; invMoveTimer=0;
+      createInvaders(); createShields(); state=ST.PLAY;
+    }
+  } else if(state===ST.GAMEOVER){
+    stateTimer+=dt;
+    if(stateTimer>1.5&&(justSpace||keys['Space'])){ justSpace=false; initGame(); state=ST.PLAY; }
+    else justSpace=false;
+  }
+
+  // camera lean
+  camLeanX+=(playerX*0.11-camLeanX)*0.06;
+  camera.position.x=camLeanX;
+  camera.lookAt(camLeanX*0.3,0,5);
+
+  drawHUD();
+  renderer.render(scene,camera);
+}
+
+initGame();
+state=ST.START;
+invaderMeshes.forEach(function(im){
+  dummy.scale.setScalar(0); dummy.updateMatrix();
+  for(var k=0;k<im.count;k++) im.setMatrixAt(k,dummy.matrix);
+  im.instanceMatrix.needsUpdate=true;
+});
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

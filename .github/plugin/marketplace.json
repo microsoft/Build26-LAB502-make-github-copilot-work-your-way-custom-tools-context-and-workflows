@@ -1,0 +1,19 @@
+{
+    "name": "community-hub",
+    "metadata": {
+        "description": "Space Invaders community hub plugin for Build 2026 Lab 502",
+        "version": "1.0.0",
+        "pluginRoot": "./src/plugins"
+    },
+    "owner": {
+        "name": "Build 2026 Lab 502"
+    },
+    "plugins": [
+        {
+            "name": "space-invaders-makers",
+            "source": "space-invaders-makers",
+            "description": "Tracks Lab 502 activity with hooks and helps users capture and share web screenshots through the Lab 502 Community Hub",
+            "version": "1.0.0"
+        }
+    ]
+}

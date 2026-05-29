@@ -1,0 +1,1363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Microsoft Build 2026 // Space Invaders</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #050816;
+      --panel: rgba(10, 15, 34, 0.82);
+      --panel-strong: rgba(11, 18, 40, 0.94);
+      --panel-border: rgba(131, 154, 255, 0.24);
+      --text: #eff3ff;
+      --muted: #a2aed8;
+      --cyan: #63f3ff;
+      --blue: #5d8cff;
+      --violet: #8a72ff;
+      --magenta: #ff4fcf;
+      --green: #7cff9f;
+      --gold: #ffd166;
+      --danger: #ff6b8a;
+      --shadow: 0 24px 60px rgba(0, 0, 0, 0.48);
+      --radius: 24px;
+      font-family: "Segoe UI", Arial, Helvetica, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(93, 140, 255, 0.18), transparent 26%),
+        radial-gradient(circle at top right, rgba(255, 79, 207, 0.14), transparent 24%),
+        radial-gradient(circle at bottom center, rgba(124, 255, 159, 0.1), transparent 30%),
+        linear-gradient(180deg, #081022 0%, #04060d 100%);
+      overflow-x: hidden;
+    }
+
+    body::before,
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    body::before {
+      background:
+        linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+      background-size: 48px 48px;
+      mask-image: linear-gradient(180deg, rgba(255, 255, 255, 0.3), transparent 85%);
+    }
+
+    body::after {
+      background:
+        radial-gradient(circle at 20% 15%, rgba(99, 243, 255, 0.16), transparent 16%),
+        radial-gradient(circle at 82% 18%, rgba(138, 114, 255, 0.14), transparent 18%),
+        radial-gradient(circle at 50% 75%, rgba(255, 79, 207, 0.12), transparent 24%);
+      filter: blur(36px);
+      opacity: 0.9;
+    }
+
+    .page-shell {
+      width: min(1180px, calc(100vw - 32px));
+      margin: 24px auto 40px;
+      display: grid;
+      gap: 18px;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.8fr);
+      gap: 18px;
+    }
+
+    .hero-card,
+    .hud-card,
+    .info-card,
+    .game-panel {
+      position: relative;
+      background: linear-gradient(180deg, rgba(16, 24, 53, 0.92), rgba(8, 12, 28, 0.92));
+      border: 1px solid var(--panel-border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(12px);
+      overflow: hidden;
+    }
+
+    .hero-card {
+      padding: 28px 28px 24px;
+    }
+
+    .hero-card::before,
+    .hud-card::before,
+    .info-card::before,
+    .game-panel::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(120deg, rgba(99, 243, 255, 0.11), transparent 28%, transparent 68%, rgba(255, 79, 207, 0.1));
+      pointer-events: none;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.78rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--cyan);
+      margin-bottom: 14px;
+    }
+
+    .eyebrow::before {
+      content: "";
+      width: 28px;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--cyan));
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(2.4rem, 5vw, 4.3rem);
+      line-height: 0.94;
+      text-transform: uppercase;
+      letter-spacing: -0.05em;
+      max-width: 10ch;
+    }
+
+    .headline-highlight {
+      display: block;
+      background: linear-gradient(90deg, var(--text), var(--cyan) 42%, #9fb3ff 70%, #ff9ce6 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .hero-copy {
+      margin: 18px 0 0;
+      max-width: 58ch;
+      color: var(--muted);
+      line-height: 1.7;
+      font-size: 1rem;
+    }
+
+    .hero-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 22px;
+    }
+
+    .tag {
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(140, 164, 255, 0.2);
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text);
+      font-size: 0.84rem;
+    }
+
+    .hud-card {
+      padding: 22px;
+      display: grid;
+      gap: 16px;
+      align-content: start;
+    }
+
+    .status-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .status-tile {
+      padding: 14px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(140, 164, 255, 0.15);
+    }
+
+    .status-label {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--muted);
+      font-size: 0.76rem;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+    }
+
+    .status-value {
+      font-size: 1.65rem;
+      font-weight: 700;
+      letter-spacing: -0.04em;
+    }
+
+    .status-note {
+      margin: 0;
+      padding: 14px 16px;
+      border-radius: 18px;
+      background: rgba(8, 14, 31, 0.78);
+      border: 1px solid rgba(140, 164, 255, 0.16);
+      color: var(--muted);
+      line-height: 1.6;
+      font-size: 0.95rem;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 290px;
+      gap: 18px;
+      align-items: start;
+    }
+
+    .game-panel {
+      padding: 18px;
+    }
+
+    .stage-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 14px;
+      padding: 4px 4px 0;
+    }
+
+    .stage-title {
+      margin: 0;
+      font-size: 1rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .live-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(140, 164, 255, 0.18);
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      color: var(--text);
+    }
+
+    .live-chip::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 0 5px rgba(124, 255, 159, 0.16);
+    }
+
+    .canvas-wrap {
+      position: relative;
+      border-radius: calc(var(--radius) - 8px);
+      overflow: hidden;
+      border: 1px solid rgba(127, 155, 255, 0.2);
+      background: linear-gradient(180deg, rgba(6, 8, 20, 0.5), rgba(2, 4, 10, 0.84));
+      aspect-ratio: 3 / 2;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      background: transparent;
+    }
+
+    .overlay {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      background:
+        linear-gradient(180deg, rgba(4, 7, 18, 0.2), rgba(3, 6, 16, 0.88)),
+        radial-gradient(circle at top, rgba(93, 140, 255, 0.2), transparent 42%);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 180ms ease;
+    }
+
+    .overlay.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .overlay-card {
+      width: min(100%, 520px);
+      padding: 28px;
+      border-radius: 24px;
+      background: rgba(8, 12, 28, 0.88);
+      border: 1px solid rgba(126, 152, 255, 0.24);
+      box-shadow: 0 24px 48px rgba(0, 0, 0, 0.42);
+      text-align: center;
+    }
+
+    .overlay-title {
+      margin: 0;
+      font-size: clamp(1.8rem, 4vw, 2.8rem);
+      line-height: 1;
+      text-transform: uppercase;
+      letter-spacing: -0.04em;
+    }
+
+    .overlay-copy {
+      margin: 16px 0 18px;
+      color: var(--muted);
+      line-height: 1.65;
+    }
+
+    .overlay-hint {
+      margin: 14px 0 0;
+      color: var(--muted);
+      font-size: 0.92rem;
+      line-height: 1.6;
+    }
+
+    .launch-button {
+      appearance: none;
+      border: none;
+      border-radius: 999px;
+      padding: 13px 22px;
+      font: inherit;
+      font-weight: 700;
+      color: #04101f;
+      background: linear-gradient(90deg, var(--cyan), #9cc4ff 42%, #ffb3e8 100%);
+      cursor: pointer;
+      box-shadow: 0 14px 32px rgba(99, 243, 255, 0.18);
+      transition: transform 140ms ease, box-shadow 140ms ease;
+    }
+
+    .launch-button:hover,
+    .launch-button:focus-visible {
+      transform: translateY(-1px);
+      box-shadow: 0 18px 36px rgba(99, 243, 255, 0.24);
+      outline: none;
+    }
+
+    .info-card {
+      padding: 22px;
+      display: grid;
+      gap: 18px;
+    }
+
+    .panel-title {
+      margin: 0;
+      font-size: 0.96rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .controls-list,
+    .brief-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .controls-item,
+    .brief-item {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: center;
+      padding: 12px 14px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(140, 164, 255, 0.14);
+      color: var(--muted);
+      font-size: 0.93rem;
+    }
+
+    .keycap {
+      min-width: 46px;
+      padding: 6px 10px;
+      border-radius: 10px;
+      text-align: center;
+      background: rgba(12, 20, 44, 0.84);
+      border: 1px solid rgba(160, 178, 255, 0.18);
+      color: var(--text);
+      font-size: 0.82rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .brief-item {
+      align-items: start;
+      flex-direction: column;
+    }
+
+    .brief-item strong {
+      color: var(--text);
+      font-size: 0.98rem;
+    }
+
+    .footer-note {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.65;
+      font-size: 0.92rem;
+    }
+
+    @media (max-width: 980px) {
+      .hero,
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .status-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 760px) {
+      .page-shell {
+        width: min(100vw - 18px, 1180px);
+        margin-top: 12px;
+      }
+
+      .hero-card,
+      .hud-card,
+      .game-panel,
+      .info-card {
+        border-radius: 20px;
+      }
+
+      .status-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .overlay-card {
+        padding: 22px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page-shell">
+    <section class="hero">
+      <article class="hero-card">
+        <div class="eyebrow">Microsoft Build 2026 theme study</div>
+        <h1>
+          Space Invaders
+          <span class="headline-highlight">Keynote Defense</span>
+        </h1>
+        <p class="hero-copy">
+          A self-contained arcade riff on the Build 2026 stage: neon conference lighting, dark glass UI, live-session energy, and a classic alien wave headed straight for your launch window.
+        </p>
+        <div class="hero-tags">
+          <span class="tag">Single HTML</span>
+          <span class="tag">Canvas gameplay</span>
+          <span class="tag">Build-inspired styling</span>
+          <span class="tag">Zero dependencies</span>
+        </div>
+      </article>
+
+      <aside class="hud-card">
+        <div class="eyebrow">Live telemetry</div>
+        <div class="status-grid">
+          <div class="status-tile">
+            <span class="status-label">Score</span>
+            <span class="status-value" id="scoreValue">0</span>
+          </div>
+          <div class="status-tile">
+            <span class="status-label">High score</span>
+            <span class="status-value" id="highScoreValue">0</span>
+          </div>
+          <div class="status-tile">
+            <span class="status-label">Lives</span>
+            <span class="status-value" id="livesValue">3</span>
+          </div>
+          <div class="status-tile">
+            <span class="status-label">Wave</span>
+            <span class="status-value" id="waveValue">1</span>
+          </div>
+        </div>
+        <p class="status-note" id="statusNote">
+          Stage standing by. Launch the session and keep the Build showcase clear.
+        </p>
+      </aside>
+    </section>
+
+    <section class="layout">
+      <article class="game-panel">
+        <div class="stage-header">
+          <p class="stage-title">Expo hall // playable session</p>
+          <span class="live-chip">Live</span>
+        </div>
+
+        <div class="canvas-wrap">
+          <canvas id="gameCanvas" width="960" height="640" aria-label="Space Invaders game"></canvas>
+          <div class="overlay visible" id="overlay">
+            <div class="overlay-card">
+              <div class="eyebrow">Build 2026</div>
+              <h2 class="overlay-title" id="overlayTitle">Launch keynote defense</h2>
+              <p class="overlay-copy" id="overlayCopy">
+                Alien traffic has entered the venue perimeter. Deploy the session rig, clear the lanes, and keep the keynote online.
+              </p>
+              <button class="launch-button" id="overlayButton" type="button">Start run</button>
+              <p class="overlay-hint" id="overlayHint">
+                Move with Arrow keys or A/D. Fire with Space. Pause with P.
+              </p>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <aside class="info-card">
+        <div>
+          <p class="panel-title">Controls</p>
+          <div class="controls-list">
+            <div class="controls-item"><span>Move</span><span class="keycap">A / D</span></div>
+            <div class="controls-item"><span>Alternate move</span><span class="keycap">Arrows</span></div>
+            <div class="controls-item"><span>Fire</span><span class="keycap">Space</span></div>
+            <div class="controls-item"><span>Pause</span><span class="keycap">P</span></div>
+            <div class="controls-item"><span>Restart / continue</span><span class="keycap">Enter</span></div>
+          </div>
+        </div>
+
+        <div>
+          <p class="panel-title">Mission brief</p>
+          <div class="brief-list">
+            <div class="brief-item">
+              <strong>Defend the stage</strong>
+              Keep the invader formation from reaching the keynote floor.
+            </div>
+            <div class="brief-item">
+              <strong>Protect the shields</strong>
+              Barriers absorb fire, but they crumble under pressure.
+            </div>
+            <div class="brief-item">
+              <strong>Scale the event</strong>
+              Each cleared wave gets faster, sharper, and more aggressive.
+            </div>
+          </div>
+        </div>
+
+        <p class="footer-note">
+          Original visuals inspired by the Build 2026 site: dark stage energy, luminous accents, and polished event framing without external assets.
+        </p>
+      </aside>
+    </section>
+  </div>
+
+  <script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+
+    const overlay = document.getElementById("overlay");
+    const overlayTitle = document.getElementById("overlayTitle");
+    const overlayCopy = document.getElementById("overlayCopy");
+    const overlayHint = document.getElementById("overlayHint");
+    const overlayButton = document.getElementById("overlayButton");
+    const scoreValue = document.getElementById("scoreValue");
+    const highScoreValue = document.getElementById("highScoreValue");
+    const livesValue = document.getElementById("livesValue");
+    const waveValue = document.getElementById("waveValue");
+    const statusNote = document.getElementById("statusNote");
+
+    const keys = {
+      left: false,
+      right: false
+    };
+
+    const palette = {
+      text: "#eff3ff",
+      muted: "#a2aed8",
+      cyan: "#63f3ff",
+      blue: "#5d8cff",
+      violet: "#8a72ff",
+      magenta: "#ff4fcf",
+      green: "#7cff9f",
+      gold: "#ffd166",
+      danger: "#ff6b8a"
+    };
+
+    const config = {
+      width: canvas.width,
+      height: canvas.height,
+      player: {
+        width: 68,
+        height: 24,
+        speed: 420,
+        fireDelay: 280
+      },
+      bullet: {
+        width: 4,
+        height: 16,
+        speed: 660
+      },
+      enemyBullet: {
+        width: 4,
+        height: 18,
+        speed: 310,
+        interval: 920
+      },
+      formation: {
+        rows: 5,
+        cols: 9,
+        gapX: 18,
+        gapY: 18,
+        width: 58,
+        height: 36,
+        top: 86,
+        paddingX: 86,
+        drop: 22,
+        baseSpeed: 52
+      },
+      shield: {
+        count: 4,
+        cellSize: 8,
+        gap: 18,
+        top: 472
+      },
+      stars: 90
+    };
+
+    let highScore = Number(localStorage.getItem("build2026InvadersHighScore") || 0);
+    let lastTime = 0;
+    let enemyShotTimer = 0;
+    let waveClearedDelay = 0;
+    let flashTimer = 0;
+
+    const state = {
+      phase: "idle",
+      score: 0,
+      lives: 3,
+      wave: 1,
+      player: null,
+      enemies: [],
+      playerBullets: [],
+      enemyBullets: [],
+      shields: [],
+      particles: [],
+      stars: [],
+      formationDirection: 1
+    };
+
+    function createStars() {
+      state.stars = Array.from({ length: config.stars }, () => ({
+        x: Math.random() * config.width,
+        y: Math.random() * config.height,
+        radius: Math.random() * 1.8 + 0.2,
+        speed: Math.random() * 18 + 8,
+        alpha: Math.random() * 0.8 + 0.15,
+        hue: Math.random() > 0.75 ? palette.magenta : Math.random() > 0.45 ? palette.cyan : "#ffffff"
+      }));
+    }
+
+    function createPlayer() {
+      return {
+        width: config.player.width,
+        height: config.player.height,
+        x: config.width / 2 - config.player.width / 2,
+        y: config.height - 72,
+        speed: config.player.speed,
+        fireCooldown: 0
+      };
+    }
+
+    function createEnemies(wave) {
+      const enemies = [];
+      const { rows, cols, gapX, gapY, width, height, top, paddingX } = config.formation;
+      const points = [40, 30, 20, 20, 10];
+      const colors = [palette.magenta, palette.violet, palette.blue, palette.cyan, palette.green];
+
+      for (let row = 0; row < rows; row += 1) {
+        for (let col = 0; col < cols; col += 1) {
+          enemies.push({
+            x: paddingX + col * (width + gapX),
+            y: top + row * (height + gapY),
+            width,
+            height,
+            alive: true,
+            row,
+            col,
+            points: points[row] + (wave - 1) * 2,
+            color: colors[row]
+          });
+        }
+      }
+
+      return enemies;
+    }
+
+    function createShieldGrid(startX, startY) {
+      const template = [
+        "00111111111100",
+        "01111111111110",
+        "11111111111111",
+        "11111111111111",
+        "11111111111111",
+        "11111000011111",
+        "11110000001111",
+        "11110000001111"
+      ];
+
+      const cells = [];
+      for (let row = 0; row < template.length; row += 1) {
+        for (let col = 0; col < template[row].length; col += 1) {
+          if (template[row][col] === "1") {
+            cells.push({
+              x: startX + col * config.shield.cellSize,
+              y: startY + row * config.shield.cellSize,
+              width: config.shield.cellSize,
+              height: config.shield.cellSize,
+              hp: 3
+            });
+          }
+        }
+      }
+      return cells;
+    }
+
+    function createShields() {
+      const templateWidth = 14 * config.shield.cellSize;
+      const totalWidth =
+        config.shield.count * templateWidth +
+        (config.shield.count - 1) * config.shield.gap;
+      const startX = (config.width - totalWidth) / 2;
+
+      state.shields = [];
+      for (let index = 0; index < config.shield.count; index += 1) {
+        const shieldX = startX + index * (templateWidth + config.shield.gap);
+        state.shields.push({
+          cells: createShieldGrid(shieldX, config.shield.top)
+        });
+      }
+    }
+
+    function resetWave(wave) {
+      state.player = createPlayer();
+      state.enemies = createEnemies(wave);
+      state.playerBullets = [];
+      state.enemyBullets = [];
+      state.particles = [];
+      state.formationDirection = 1;
+      enemyShotTimer = 0;
+      waveClearedDelay = 0;
+      flashTimer = 0;
+      createShields();
+    }
+
+    function startGame() {
+      state.score = 0;
+      state.lives = 3;
+      state.wave = 1;
+      state.phase = "running";
+      resetWave(state.wave);
+      updateHud();
+      hideOverlay();
+      statusNote.textContent = "Session live. Keep the keynote channel clear.";
+    }
+
+    function nextWave() {
+      state.wave += 1;
+      resetWave(state.wave);
+      state.phase = "running";
+      updateHud();
+      hideOverlay();
+      statusNote.textContent = "New wave deployed. Traffic volume is rising.";
+    }
+
+    function hideOverlay() {
+      overlay.classList.remove("visible");
+    }
+
+    function showOverlay(title, copy, buttonLabel, hint) {
+      overlayTitle.textContent = title;
+      overlayCopy.textContent = copy;
+      overlayButton.textContent = buttonLabel;
+      overlayHint.textContent = hint;
+      overlay.classList.add("visible");
+    }
+
+    function updateHud() {
+      scoreValue.textContent = state.score.toString();
+      highScoreValue.textContent = highScore.toString();
+      livesValue.textContent = state.lives.toString();
+      waveValue.textContent = state.wave.toString();
+    }
+
+    function addScore(points) {
+      state.score += points;
+      if (state.score > highScore) {
+        highScore = state.score;
+        localStorage.setItem("build2026InvadersHighScore", String(highScore));
+      }
+      updateHud();
+    }
+
+    function togglePause() {
+      if (state.phase === "running") {
+        state.phase = "paused";
+        statusNote.textContent = "Session paused. Press P or Enter to resume.";
+        showOverlay("Session paused", "The keynote is on hold. Resume when you are ready to re-enter the event floor.", "Resume", "Press P or Enter to continue.");
+      } else if (state.phase === "paused") {
+        state.phase = "running";
+        statusNote.textContent = "Session resumed. Defend the stage.";
+        hideOverlay();
+      }
+    }
+
+    function firePlayerBullet() {
+      if (state.phase !== "running" || state.player.fireCooldown > 0) {
+        return;
+      }
+
+      state.playerBullets.push({
+        x: state.player.x + state.player.width / 2 - config.bullet.width / 2,
+        y: state.player.y - config.bullet.height,
+        width: config.bullet.width,
+        height: config.bullet.height,
+        speed: config.bullet.speed
+      });
+      state.player.fireCooldown = config.player.fireDelay;
+    }
+
+    function rectsIntersect(a, b) {
+      return (
+        a.x < b.x + b.width &&
+        a.x + a.width > b.x &&
+        a.y < b.y + b.height &&
+        a.y + a.height > b.y
+      );
+    }
+
+    function spawnExplosion(x, y, color, count, speedScale) {
+      for (let index = 0; index < count; index += 1) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = (Math.random() * 70 + 30) * speedScale;
+        state.particles.push({
+          x,
+          y,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          radius: Math.random() * 2.5 + 1.2,
+          life: Math.random() * 0.45 + 0.35,
+          maxLife: 0,
+          color
+        });
+        state.particles[state.particles.length - 1].maxLife = state.particles[state.particles.length - 1].life;
+      }
+    }
+
+    function damageShieldAt(projectile) {
+      for (const shield of state.shields) {
+        for (const cell of shield.cells) {
+          if (cell.hp > 0 && rectsIntersect(projectile, cell)) {
+            cell.hp -= 1;
+            if (cell.hp <= 0) {
+              spawnExplosion(cell.x + cell.width / 2, cell.y + cell.height / 2, palette.cyan, 4, 0.5);
+            }
+            return true;
+          }
+        }
+      }
+      return false;
+    }
+
+    function findShootingCandidates() {
+      const candidates = [];
+      for (let col = 0; col < config.formation.cols; col += 1) {
+        let shooter = null;
+        for (let row = config.formation.rows - 1; row >= 0; row -= 1) {
+          shooter = state.enemies.find(enemy => enemy.alive && enemy.col === col && enemy.row === row);
+          if (shooter) {
+            candidates.push(shooter);
+            break;
+          }
+        }
+      }
+      return candidates;
+    }
+
+    function fireEnemyBullet() {
+      const candidates = findShootingCandidates();
+      if (candidates.length === 0) {
+        return;
+      }
+
+      const shooter = candidates[Math.floor(Math.random() * candidates.length)];
+      state.enemyBullets.push({
+        x: shooter.x + shooter.width / 2 - config.enemyBullet.width / 2,
+        y: shooter.y + shooter.height,
+        width: config.enemyBullet.width,
+        height: config.enemyBullet.height,
+        speed: config.enemyBullet.speed + (state.wave - 1) * 24
+      });
+    }
+
+    function loseLife() {
+      state.lives -= 1;
+      flashTimer = 0.18;
+      spawnExplosion(state.player.x + state.player.width / 2, state.player.y, palette.danger, 20, 1.2);
+
+      if (state.lives <= 0) {
+        state.phase = "lost";
+        updateHud();
+        statusNote.textContent = "Signal lost. Restart the session to defend the keynote again.";
+        showOverlay("Signal lost", "The invaders overran the Build stage. Reset the session and launch another defense run.", "Restart run", "Press Enter or Space to try again.");
+        return;
+      }
+
+      state.player = createPlayer();
+      state.playerBullets = [];
+      state.enemyBullets = [];
+      updateHud();
+      statusNote.textContent = "Hit taken. Stabilize and re-engage.";
+    }
+
+    function updatePlayer(dt) {
+      const direction = (keys.right ? 1 : 0) - (keys.left ? 1 : 0);
+      state.player.x += direction * state.player.speed * dt;
+      state.player.x = Math.max(22, Math.min(config.width - state.player.width - 22, state.player.x));
+      state.player.fireCooldown = Math.max(0, state.player.fireCooldown - dt * 1000);
+    }
+
+    function updateBullets(dt) {
+      for (const bullet of state.playerBullets) {
+        bullet.y -= bullet.speed * dt;
+      }
+      for (const bullet of state.enemyBullets) {
+        bullet.y += bullet.speed * dt;
+      }
+
+      state.playerBullets = state.playerBullets.filter(bullet => bullet.y + bullet.height > 0);
+      state.enemyBullets = state.enemyBullets.filter(bullet => bullet.y < config.height + bullet.height);
+    }
+
+    function updateEnemies(dt) {
+      const aliveEnemies = state.enemies.filter(enemy => enemy.alive);
+      if (aliveEnemies.length === 0) {
+        waveClearedDelay += dt;
+        if (waveClearedDelay >= 0.65) {
+          state.phase = "intermission";
+          statusNote.textContent = "Wave cleared. Prepare for the next session slot.";
+          showOverlay("Wave secured", "You cleared the Build floor. The next wave is queued and ready to launch.", "Start next wave", "Press Enter or Space to continue.");
+        }
+        return;
+      }
+
+      const pressure = 1 + (1 - aliveEnemies.length / state.enemies.length) * 1.8 + (state.wave - 1) * 0.18;
+      const speed = config.formation.baseSpeed * pressure;
+      let hitEdge = false;
+
+      for (const enemy of aliveEnemies) {
+        enemy.x += state.formationDirection * speed * dt;
+        if (enemy.x <= 18 || enemy.x + enemy.width >= config.width - 18) {
+          hitEdge = true;
+        }
+      }
+
+      if (hitEdge) {
+        state.formationDirection *= -1;
+        for (const enemy of aliveEnemies) {
+          enemy.x += state.formationDirection * speed * dt;
+          enemy.y += config.formation.drop;
+          if (enemy.y + enemy.height >= state.player.y - 12) {
+            state.lives = 0;
+            loseLife();
+            return;
+          }
+        }
+      }
+
+      enemyShotTimer += dt * 1000;
+      const fireInterval = Math.max(260, config.enemyBullet.interval - (state.wave - 1) * 80);
+      if (enemyShotTimer >= fireInterval) {
+        enemyShotTimer = 0;
+        fireEnemyBullet();
+      }
+    }
+
+    function resolvePlayerBulletHits() {
+      const activeBullets = [];
+
+      for (const bullet of state.playerBullets) {
+        let collided = false;
+
+        for (const enemy of state.enemies) {
+          if (enemy.alive && rectsIntersect(bullet, enemy)) {
+            enemy.alive = false;
+            collided = true;
+            addScore(enemy.points);
+            spawnExplosion(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, enemy.color, 12, 1);
+            break;
+          }
+        }
+
+        if (!collided) {
+          for (const enemyBullet of state.enemyBullets) {
+            if (rectsIntersect(bullet, enemyBullet)) {
+              enemyBullet.y = -100;
+              collided = true;
+              spawnExplosion(bullet.x, bullet.y, palette.gold, 6, 0.6);
+              break;
+            }
+          }
+        }
+
+        if (!collided && damageShieldAt(bullet)) {
+          collided = true;
+        }
+
+        if (!collided) {
+          activeBullets.push(bullet);
+        }
+      }
+
+      state.playerBullets = activeBullets;
+      state.enemyBullets = state.enemyBullets.filter(bullet => bullet.y > -20);
+    }
+
+    function resolveEnemyBulletHits() {
+      const remainingBullets = [];
+
+      for (const bullet of state.enemyBullets) {
+        if (damageShieldAt(bullet)) {
+          continue;
+        }
+
+        if (rectsIntersect(bullet, state.player)) {
+          loseLife();
+          continue;
+        }
+
+        remainingBullets.push(bullet);
+      }
+
+      state.enemyBullets = remainingBullets;
+    }
+
+    function updateParticles(dt) {
+      for (const particle of state.particles) {
+        particle.x += particle.vx * dt;
+        particle.y += particle.vy * dt;
+        particle.vx *= 0.985;
+        particle.vy *= 0.985;
+        particle.life -= dt;
+      }
+      state.particles = state.particles.filter(particle => particle.life > 0);
+    }
+
+    function updateStars(dt) {
+      for (const star of state.stars) {
+        star.y += star.speed * dt;
+        if (star.y > config.height) {
+          star.y = -4;
+          star.x = Math.random() * config.width;
+        }
+      }
+    }
+
+    function update(dt) {
+      if (state.phase !== "running") {
+        updateStars(dt);
+        updateParticles(dt);
+        flashTimer = Math.max(0, flashTimer - dt);
+        return;
+      }
+
+      updateStars(dt);
+      updatePlayer(dt);
+      updateBullets(dt);
+      updateEnemies(dt);
+      resolvePlayerBulletHits();
+      resolveEnemyBulletHits();
+      updateParticles(dt);
+      flashTimer = Math.max(0, flashTimer - dt);
+    }
+
+    function drawBackground() {
+      ctx.clearRect(0, 0, config.width, config.height);
+
+      const bgGradient = ctx.createLinearGradient(0, 0, 0, config.height);
+      bgGradient.addColorStop(0, "#091227");
+      bgGradient.addColorStop(0.55, "#050b18");
+      bgGradient.addColorStop(1, "#02040a");
+      ctx.fillStyle = bgGradient;
+      ctx.fillRect(0, 0, config.width, config.height);
+
+      ctx.save();
+      ctx.globalAlpha = 0.18;
+      ctx.strokeStyle = "#7a93ff";
+      ctx.lineWidth = 1;
+      for (let x = 0; x <= config.width; x += 48) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, config.height);
+        ctx.stroke();
+      }
+      for (let y = 0; y <= config.height; y += 48) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(config.width, y);
+        ctx.stroke();
+      }
+      ctx.restore();
+
+      for (const star of state.stars) {
+        ctx.save();
+        ctx.globalAlpha = star.alpha;
+        ctx.fillStyle = star.hue;
+        ctx.beginPath();
+        ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      const glow = ctx.createRadialGradient(config.width / 2, config.height * 0.12, 0, config.width / 2, config.height * 0.12, 280);
+      glow.addColorStop(0, "rgba(99,243,255,0.14)");
+      glow.addColorStop(0.65, "rgba(93,140,255,0.08)");
+      glow.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = glow;
+      ctx.fillRect(0, 0, config.width, config.height);
+
+      ctx.fillStyle = "rgba(255,255,255,0.04)";
+      ctx.fillRect(24, config.height - 40, config.width - 48, 2);
+    }
+
+    function drawPlayer() {
+      const { x, y, width, height } = state.player;
+      const gradient = ctx.createLinearGradient(x, y, x + width, y + height);
+      gradient.addColorStop(0, palette.cyan);
+      gradient.addColorStop(0.5, "#9fc6ff");
+      gradient.addColorStop(1, palette.magenta);
+      ctx.fillStyle = gradient;
+
+      ctx.beginPath();
+      ctx.moveTo(x, y + height);
+      ctx.lineTo(x + width * 0.18, y + 8);
+      ctx.lineTo(x + width * 0.36, y + 8);
+      ctx.lineTo(x + width * 0.5, y);
+      ctx.lineTo(x + width * 0.64, y + 8);
+      ctx.lineTo(x + width * 0.82, y + 8);
+      ctx.lineTo(x + width, y + height);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.fillStyle = "rgba(255,255,255,0.92)";
+      ctx.fillRect(x + width * 0.42, y + 6, width * 0.16, 8);
+
+      ctx.fillStyle = "rgba(99,243,255,0.26)";
+      ctx.fillRect(x + 10, y + height, width - 20, 6);
+    }
+
+    function drawEnemies() {
+      for (const enemy of state.enemies) {
+        if (!enemy.alive) {
+          continue;
+        }
+
+        const gradient = ctx.createLinearGradient(enemy.x, enemy.y, enemy.x + enemy.width, enemy.y + enemy.height);
+        gradient.addColorStop(0, enemy.color);
+        gradient.addColorStop(1, "rgba(255,255,255,0.95)");
+        ctx.fillStyle = gradient;
+
+        ctx.beginPath();
+        ctx.roundRect(enemy.x, enemy.y, enemy.width, enemy.height, 10);
+        ctx.fill();
+
+        ctx.fillStyle = "#091225";
+        ctx.fillRect(enemy.x + 10, enemy.y + 10, 10, 8);
+        ctx.fillRect(enemy.x + enemy.width - 20, enemy.y + 10, 10, 8);
+        ctx.fillRect(enemy.x + 14, enemy.y + enemy.height - 10, enemy.width - 28, 5);
+
+        ctx.strokeStyle = "rgba(255,255,255,0.28)";
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.moveTo(enemy.x + 14, enemy.y + enemy.height);
+        ctx.lineTo(enemy.x + 14, enemy.y + enemy.height + 8);
+        ctx.moveTo(enemy.x + enemy.width - 14, enemy.y + enemy.height);
+        ctx.lineTo(enemy.x + enemy.width - 14, enemy.y + enemy.height + 8);
+        ctx.stroke();
+      }
+    }
+
+    function drawShields() {
+      for (const shield of state.shields) {
+        for (const cell of shield.cells) {
+          if (cell.hp <= 0) {
+            continue;
+          }
+          const alpha = 0.26 + cell.hp * 0.2;
+          ctx.fillStyle = cell.hp === 1 ? "rgba(255, 209, 102, " + alpha + ")" : cell.hp === 2 ? "rgba(138, 114, 255, " + alpha + ")" : "rgba(99, 243, 255, " + alpha + ")";
+          ctx.fillRect(cell.x, cell.y, cell.width - 1, cell.height - 1);
+        }
+      }
+    }
+
+    function drawBullets() {
+      for (const bullet of state.playerBullets) {
+        ctx.fillStyle = palette.gold;
+        ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
+      }
+
+      for (const bullet of state.enemyBullets) {
+        const gradient = ctx.createLinearGradient(bullet.x, bullet.y, bullet.x, bullet.y + bullet.height);
+        gradient.addColorStop(0, palette.magenta);
+        gradient.addColorStop(1, palette.danger);
+        ctx.fillStyle = gradient;
+        ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
+      }
+    }
+
+    function drawParticles() {
+      for (const particle of state.particles) {
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, particle.life / particle.maxLife);
+        ctx.fillStyle = particle.color;
+        ctx.beginPath();
+        ctx.arc(particle.x, particle.y, particle.radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+
+    function drawTopHud() {
+      ctx.save();
+      ctx.fillStyle = "rgba(7, 11, 25, 0.72)";
+      ctx.strokeStyle = "rgba(143, 164, 255, 0.22)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.roundRect(18, 18, config.width - 36, 42, 14);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = "rgba(239, 243, 255, 0.92)";
+      ctx.font = "600 15px Segoe UI, Arial, sans-serif";
+      ctx.fillText("BUILD 2026 // DEFENSE GRID", 34, 44);
+
+      ctx.fillStyle = "rgba(162, 174, 216, 0.92)";
+      ctx.font = "500 13px Segoe UI, Arial, sans-serif";
+      ctx.fillText("Score " + state.score, config.width - 330, 44);
+      ctx.fillText("Lives " + state.lives, config.width - 220, 44);
+      ctx.fillText("Wave " + state.wave, config.width - 120, 44);
+      ctx.restore();
+    }
+
+    function drawFlash() {
+      if (flashTimer <= 0) {
+        return;
+      }
+      ctx.save();
+      ctx.globalAlpha = Math.min(0.32, flashTimer * 1.8);
+      ctx.fillStyle = palette.danger;
+      ctx.fillRect(0, 0, config.width, config.height);
+      ctx.restore();
+    }
+
+    function render() {
+      drawBackground();
+      drawTopHud();
+
+      if (state.player) {
+        drawShields();
+        drawEnemies();
+        drawBullets();
+        drawPlayer();
+        drawParticles();
+      }
+
+      drawFlash();
+    }
+
+    function loop(timestamp) {
+      const delta = Math.min((timestamp - lastTime) / 1000 || 0, 0.033);
+      lastTime = timestamp;
+      update(delta);
+      render();
+      requestAnimationFrame(loop);
+    }
+
+    function handleOverlayAction() {
+      if (state.phase === "idle" || state.phase === "lost") {
+        startGame();
+      } else if (state.phase === "paused") {
+        togglePause();
+      } else if (state.phase === "intermission") {
+        nextWave();
+      }
+    }
+
+    function handleActionKey() {
+      if (state.phase === "idle" || state.phase === "lost" || state.phase === "intermission") {
+        handleOverlayAction();
+      } else if (state.phase === "paused") {
+        togglePause();
+      } else if (state.phase === "running") {
+        firePlayerBullet();
+      }
+    }
+
+    window.addEventListener("keydown", event => {
+      if (event.key === "ArrowLeft" || event.key === "a" || event.key === "A") {
+        keys.left = true;
+      }
+      if (event.key === "ArrowRight" || event.key === "d" || event.key === "D") {
+        keys.right = true;
+      }
+
+      if (["ArrowLeft", "ArrowRight", " ", "Enter"].includes(event.key)) {
+        event.preventDefault();
+      }
+
+      if (event.key === " " && !event.repeat) {
+        handleActionKey();
+      }
+
+      if (event.key === "Enter" && !event.repeat) {
+        if (state.phase === "running") {
+          firePlayerBullet();
+        } else {
+          handleOverlayAction();
+        }
+      }
+
+      if ((event.key === "p" || event.key === "P") && !event.repeat) {
+        togglePause();
+      }
+    });
+
+    window.addEventListener("keyup", event => {
+      if (event.key === "ArrowLeft" || event.key === "a" || event.key === "A") {
+        keys.left = false;
+      }
+      if (event.key === "ArrowRight" || event.key === "d" || event.key === "D") {
+        keys.right = false;
+      }
+    });
+
+    overlayButton.addEventListener("click", handleOverlayAction);
+
+    createStars();
+    state.player = createPlayer();
+    createShields();
+    updateHud();
+    showOverlay(
+      "Launch keynote defense",
+      "Alien traffic has entered the venue perimeter. Deploy the session rig, clear the lanes, and keep the keynote online.",
+      "Start run",
+      "Move with Arrow keys or A/D. Fire with Space. Pause with P."
+    );
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>

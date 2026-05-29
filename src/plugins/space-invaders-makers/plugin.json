@@ -1,0 +1,25 @@
+{
+    "name": "sspace-invaders-makers",
+    "description": "Tracks Lab 502 activity with hooks and helps users capture and share web screenshots through the Lab 502 Community Hub",
+    "version": "1.0.0",
+    "author": {
+        "name": "Build 2026 Lab"
+    },
+    "skills": [
+        "skills/share-screenshot"
+    ],
+    "agents": "agents/",
+    "hooks": "hooks/hooks.json",
+    "lspServers": {
+        "html": {
+            "command": "vscode-html-language-server",
+            "args": [
+                "--stdio"
+            ],
+            "fileExtensions": {
+                ".html": "html",
+                ".htm": "html"
+            }
+        }
+    }
+}

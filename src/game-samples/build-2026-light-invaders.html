@@ -1,0 +1,755 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Build 2026 Invaders</title>
+<style>
+  :root{
+    --ms-red:#F25022;
+    --ms-green:#7FBA00;
+    --ms-blue:#00A4EF;
+    --ms-yellow:#FFB900;
+    --build-violet:#7B5CFF;
+    --build-cyan:#33D6FF;
+    --ink:#0B1020;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,Helvetica,Arial,sans-serif;
+    color:var(--ink);
+    background:
+      radial-gradient(1200px 600px at 10% -10%,rgba(123,92,255,.25),transparent 60%),
+      radial-gradient(900px 500px at 110% 10%,rgba(51,214,255,.25),transparent 60%),
+      radial-gradient(800px 600px at 50% 120%,rgba(255,185,0,.15),transparent 60%),
+      linear-gradient(180deg,#F7F8FC 0%,#EAEFFB 100%);
+    min-height:100%;
+    display:flex;flex-direction:column;align-items:center;
+    padding:18px 12px 24px;
+  }
+  header.banner{
+    width:100%;max-width:880px;text-align:center;margin-bottom:10px;
+  }
+  .logo-row{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap}
+  .ms-mark{display:inline-grid;grid-template-columns:14px 14px;grid-template-rows:14px 14px;gap:3px}
+  .ms-mark i{display:block;border-radius:2px}
+  .ms-mark i:nth-child(1){background:var(--ms-red)}
+  .ms-mark i:nth-child(2){background:var(--ms-green)}
+  .ms-mark i:nth-child(3){background:var(--ms-blue)}
+  .ms-mark i:nth-child(4){background:var(--ms-yellow)}
+  h1{
+    font-size:clamp(20px,3.2vw,30px);
+    margin:0;letter-spacing:.2px;font-weight:800;
+    background:linear-gradient(90deg,var(--build-violet),var(--build-cyan) 60%,var(--ms-blue));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  .sub{margin-top:4px;color:#3a3f57;font-size:13px;letter-spacing:.4px}
+  .countdown{
+    margin:10px auto 4px;display:inline-flex;gap:8px;align-items:stretch;
+    padding:8px 12px;border-radius:14px;
+    background:rgba(255,255,255,.7);backdrop-filter:blur(6px);
+    border:1px solid rgba(123,92,255,.25);
+    box-shadow:0 6px 20px rgba(20,30,80,.08);
+  }
+  .cd-cell{min-width:54px;text-align:center}
+  .cd-cell b{
+    display:block;font-variant-numeric:tabular-nums;font-size:18px;font-weight:800;color:#1a1f3a;
+  }
+  .cd-cell span{font-size:10px;letter-spacing:1px;color:#5b628a;text-transform:uppercase}
+  .stage-wrap{
+    position:relative;width:min(880px,96vw);
+    aspect-ratio: 880 / 620;
+    border-radius:18px;overflow:hidden;
+    background:
+      radial-gradient(600px 300px at 50% 110%,rgba(123,92,255,.35),transparent 60%),
+      linear-gradient(180deg,#0B1020 0%,#141a3a 60%,#1b2350 100%);
+    box-shadow:
+      0 30px 60px rgba(20,30,80,.25),
+      0 2px 0 rgba(255,255,255,.6) inset,
+      0 0 0 1px rgba(123,92,255,.35);
+  }
+  canvas{display:block;width:100%;height:100%;image-rendering:pixelated}
+  .hud{
+    position:absolute;inset:0;pointer-events:none;
+    color:#EAEFFB;font-weight:700;letter-spacing:.6px;
+    font-feature-settings:"tnum" 1;
+  }
+  .hud .row{
+    position:absolute;left:14px;right:14px;top:10px;
+    display:flex;justify-content:space-between;font-size:13px;text-shadow:0 1px 0 rgba(0,0,0,.4)
+  }
+  .hud .row .pill{
+    background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);
+    padding:4px 10px;border-radius:999px;
+  }
+  .overlay{
+    position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    background:radial-gradient(600px 400px at 50% 50%,rgba(11,16,32,.55),rgba(11,16,32,.85));
+    color:#fff;text-align:center;padding:24px;gap:10px;pointer-events:auto;
+  }
+  .overlay h2{
+    margin:0;font-size:clamp(22px,4vw,38px);
+    background:linear-gradient(90deg,var(--build-cyan),var(--build-violet));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  .overlay p{margin:0;color:#cfd5ee;font-size:14px;max-width:520px}
+  .overlay .keys{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:6px}
+  .key{
+    border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.06);
+    padding:4px 8px;border-radius:8px;font-size:12px;color:#eaefff
+  }
+  .btn{
+    margin-top:12px;border:0;cursor:pointer;color:white;font-weight:800;letter-spacing:.4px;
+    padding:10px 18px;border-radius:12px;
+    background:linear-gradient(135deg,var(--build-violet),var(--ms-blue));
+    box-shadow:0 8px 24px rgba(123,92,255,.45);
+  }
+  .btn:hover{filter:brightness(1.07)}
+  footer{margin-top:14px;color:#5b628a;font-size:12px;text-align:center}
+  .hidden{display:none !important}
+  .mute-btn{
+    pointer-events:auto;margin-left:8px;border:1px solid rgba(255,255,255,.25);
+    background:rgba(255,255,255,.08);color:#eaefff;border-radius:8px;font-size:11px;padding:2px 8px;cursor:pointer
+  }
+</style>
+</head>
+<body>
+<header class="banner">
+  <div class="logo-row">
+    <span class="ms-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+    <h1>Microsoft Build 2026 — Invaders</h1>
+  </div>
+  <div class="sub">June 2–3, 2026 · San Francisco &amp; online</div>
+  <div class="countdown" id="countdown" aria-label="Countdown to Microsoft Build 2026">
+    <div class="cd-cell"><b id="cd-d">--</b><span>days</span></div>
+    <div class="cd-cell"><b id="cd-h">--</b><span>hours</span></div>
+    <div class="cd-cell"><b id="cd-m">--</b><span>min</span></div>
+    <div class="cd-cell"><b id="cd-s">--</b><span>sec</span></div>
+  </div>
+</header>
+
+<div class="stage-wrap">
+  <canvas id="game" width="880" height="620"></canvas>
+  <div class="hud">
+    <div class="row">
+      <div>
+        <span class="pill">SCORE <span id="score">0</span></span>
+        <span class="pill">HI <span id="hiscore">0</span></span>
+      </div>
+      <div>
+        <span class="pill">WAVE <span id="wave">1</span></span>
+        <span class="pill">LIVES <span id="lives">3</span></span>
+        <button class="mute-btn" id="mute" title="Mute (M)">🔊</button>
+      </div>
+    </div>
+
+    <div class="overlay" id="overlay">
+      <h2 id="ov-title">BUILD 2026 INVADERS</h2>
+      <p id="ov-text">Defend the dev cloud. Shoot the invaders before they reach the keynote stage.</p>
+      <div class="keys">
+        <span class="key">← →</span><span class="key">A / D move</span>
+        <span class="key">Space shoot</span><span class="key">P pause</span>
+        <span class="key">M mute</span><span class="key">Enter start</span>
+      </div>
+      <button class="btn" id="startBtn">Press Enter to Start</button>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Single-file demo · No external assets · Inspired by Microsoft Build 2026.
+</footer>
+
+<script>
+(() => {
+  // ---------- Countdown ----------
+  // June 2, 2026 09:00 PT  (PT in June = UTC-7)
+  const BUILD_START = new Date(Date.UTC(2026, 5, 2, 16, 0, 0));
+  const cd = {d:document.getElementById('cd-d'),h:document.getElementById('cd-h'),
+              m:document.getElementById('cd-m'),s:document.getElementById('cd-s')};
+  function tickCountdown(){
+    let ms = BUILD_START - new Date();
+    if(ms<0){ cd.d.textContent=cd.h.textContent=cd.m.textContent=cd.s.textContent='00';
+      document.getElementById('countdown').setAttribute('aria-label','Build 2026 is happening!'); return; }
+    const s=Math.floor(ms/1000)%60, m=Math.floor(ms/60000)%60, h=Math.floor(ms/3600000)%24, d=Math.floor(ms/86400000);
+    const pad=n=>String(n).padStart(2,'0');
+    cd.d.textContent=pad(d); cd.h.textContent=pad(h); cd.m.textContent=pad(m); cd.s.textContent=pad(s);
+  }
+  tickCountdown(); setInterval(tickCountdown,1000);
+
+  // ---------- Canvas ----------
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+  ctx.imageSmoothingEnabled = false;
+  const W = canvas.width, H = canvas.height;
+
+  // ---------- Audio ----------
+  let audioCtx = null, muted = false;
+  function ac(){ if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)(); return audioCtx; }
+  function beep(freq, dur=0.08, type='square', gain=0.05, slide=0){
+    if(muted) return;
+    try{
+      const c=ac(); const o=c.createOscillator(); const g=c.createGain();
+      o.type=type; o.frequency.value=freq;
+      if(slide) o.frequency.exponentialRampToValueAtTime(Math.max(40,freq+slide), c.currentTime+dur);
+      g.gain.value=gain; g.gain.exponentialRampToValueAtTime(0.0001, c.currentTime+dur);
+      o.connect(g).connect(c.destination); o.start(); o.stop(c.currentTime+dur);
+    }catch(e){}
+  }
+  const sfx = {
+    shoot: ()=>beep(880,0.07,'square',0.04,-300),
+    explode: ()=>{ beep(160,0.18,'sawtooth',0.06,-120); beep(90,0.22,'square',0.04,-40); },
+    hit: ()=>beep(220,0.12,'triangle',0.05,-80),
+    step: (i)=>beep(120 + (i%4)*30,0.05,'square',0.025),
+    ufo: ()=>beep(660,0.25,'sine',0.05,200),
+    bonus: ()=>{ beep(700,0.08,'square',0.05); setTimeout(()=>beep(1000,0.1,'square',0.05),80); },
+    levelup: ()=>{ [523,659,784,1047].forEach((f,i)=>setTimeout(()=>beep(f,0.1,'triangle',0.05),i*80)); },
+    gameover: ()=>{ [440,392,349,294].forEach((f,i)=>setTimeout(()=>beep(f,0.18,'sawtooth',0.06),i*120)); },
+  };
+  const muteBtn = document.getElementById('mute');
+  function setMute(v){ muted=v; muteBtn.textContent = muted?'🔇':'🔊'; }
+  muteBtn.addEventListener('click', e=>{ e.preventDefault(); setMute(!muted); });
+
+  // ---------- Sprites (pixel bitmaps) ----------
+  // 0 = transparent, 1 = primary, 2 = secondary
+  const S = {
+    inv: [
+      // type A (top row) — small
+      [
+        [0,0,1,0,0,0,0,0,1,0,0],
+        [0,0,0,1,0,0,0,1,0,0,0],
+        [0,0,1,1,1,1,1,1,1,0,0],
+        [0,1,1,0,1,1,1,0,1,1,0],
+        [1,1,1,1,1,1,1,1,1,1,1],
+        [1,0,1,1,1,1,1,1,1,0,1],
+        [1,0,1,0,0,0,0,0,1,0,1],
+        [0,0,0,1,1,0,1,1,0,0,0],
+      ],
+      // type B (mid rows) — medium
+      [
+        [0,0,1,0,0,0,0,0,1,0,0],
+        [1,0,0,1,0,0,0,1,0,0,1],
+        [1,0,1,1,1,1,1,1,1,0,1],
+        [1,1,1,0,1,1,1,0,1,1,1],
+        [1,1,1,1,1,1,1,1,1,1,1],
+        [0,1,1,1,1,1,1,1,1,1,0],
+        [0,0,1,0,0,0,0,0,1,0,0],
+        [0,1,0,0,0,0,0,0,0,1,0],
+      ],
+      // type C (bottom rows) — chunky
+      [
+        [0,0,0,1,1,1,1,1,0,0,0],
+        [0,1,1,1,1,1,1,1,1,1,0],
+        [1,1,1,1,1,1,1,1,1,1,1],
+        [1,1,1,0,0,1,0,0,1,1,1],
+        [1,1,1,1,1,1,1,1,1,1,1],
+        [0,0,1,1,0,1,0,1,1,0,0],
+        [0,1,1,0,1,0,1,0,1,1,0],
+        [1,1,0,0,0,0,0,0,0,1,1],
+      ],
+    ],
+    player: [
+      [0,0,0,0,0,1,0,0,0,0,0],
+      [0,0,0,0,1,1,1,0,0,0,0],
+      [0,0,0,0,1,2,1,0,0,0,0],
+      [0,0,0,1,1,3,1,1,0,0,0],
+      [0,0,0,1,4,3,4,1,0,0,0],
+      [0,0,1,1,4,3,4,1,1,0,0],
+      [0,1,1,5,4,3,4,5,1,1,0],
+      [0,1,5,5,4,3,4,5,5,1,0],
+      [1,1,5,6,4,3,4,6,5,1,1],
+      [1,7,7,1,1,1,1,1,7,7,1],
+      [1,8,1,0,1,0,1,0,1,8,1],
+    ],
+    ufo: [
+      [0,0,0,1,1,1,1,1,1,1,0,0,0],
+      [0,1,1,2,2,2,2,2,2,2,1,1,0],
+      [1,2,2,3,3,3,3,3,3,3,2,2,1],
+      [0,1,1,1,1,1,1,1,1,1,1,1,0],
+      [0,0,1,0,1,0,1,0,1,0,1,0,0],
+    ],
+    bunker: [
+      [0,0,1,1,1,1,1,1,1,1,1,1,0,0],
+      [0,1,1,1,1,1,1,1,1,1,1,1,1,0],
+      [1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+      [1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+      [1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+      [1,1,1,1,1,0,0,0,0,1,1,1,1,1],
+      [1,1,1,0,0,0,0,0,0,0,0,1,1,1],
+      [1,1,1,0,0,0,0,0,0,0,0,1,1,1],
+    ],
+    explosion: [
+      [0,1,0,0,1,0,0,0,1,0,0,1,0],
+      [0,0,1,0,0,0,1,0,0,0,1,0,0],
+      [1,0,0,0,1,1,1,1,1,0,0,0,1],
+      [0,0,1,1,1,1,1,1,1,1,1,0,0],
+      [1,0,1,1,1,1,1,1,1,1,1,0,1],
+      [0,0,1,1,1,1,1,1,1,1,1,0,0],
+      [1,0,0,0,1,1,1,1,1,0,0,0,1],
+      [0,0,1,0,0,0,1,0,0,0,1,0,0],
+      [0,1,0,0,1,0,0,0,1,0,0,1,0],
+    ],
+  };
+
+  function drawBitmap(bmp, x, y, scale, palette){
+    for(let r=0;r<bmp.length;r++){
+      for(let c=0;c<bmp[r].length;c++){
+        const v = bmp[r][c];
+        if(v===0) continue;
+        ctx.fillStyle = palette[v] || palette[1] || '#fff';
+        ctx.fillRect(x + c*scale, y + r*scale, scale, scale);
+      }
+    }
+  }
+
+  // Build palette
+  const COLORS = {
+    red:'#F25022', green:'#7FBA00', blue:'#00A4EF', yellow:'#FFB900',
+    violet:'#7B5CFF', cyan:'#33D6FF',
+    bunker:'#9BE7C4', bunkerEdge:'#5BD3A6',
+    ufo1:'#FFB900', ufo2:'#F25022', ufo3:'#FFFFFF',
+    bullet:'#EAEFFB', enemyBullet:'#FF7AC2',
+    text:'#EAEFFB',
+  };
+  const ROW_COLORS = [COLORS.cyan, COLORS.violet, COLORS.blue, COLORS.green, COLORS.yellow];
+  const ROW_TYPES  = [0,1,1,2,2]; // top to bottom
+
+  // Player palette indexes 1..8
+  const PLAYER_PAL = {
+    1:'#D8DEF2', // body outline
+    2:'#33D6FF', // tip glow
+    3:'#7B5CFF', // window
+    4:'#F25022', // red stripe
+    5:'#7FBA00', // green stripe
+    6:'#00A4EF', // blue stripe
+    7:'#FFB900', // fins
+    8:'#F25022', // exhaust marker
+  };
+  const UFO_PAL = {1:COLORS.ufo3, 2:COLORS.ufo1, 3:COLORS.ufo2};
+  const BUNKER_PAL = {1:COLORS.bunker};
+
+  // ---------- Game state ----------
+  const STATE = { TITLE:'title', PLAYING:'playing', PAUSED:'paused', WAVECLEAR:'waveclear', GAMEOVER:'gameover' };
+  let state = STATE.TITLE;
+
+  const ui = {
+    score: document.getElementById('score'),
+    hi: document.getElementById('hiscore'),
+    wave: document.getElementById('wave'),
+    lives: document.getElementById('lives'),
+    overlay: document.getElementById('overlay'),
+    ovTitle: document.getElementById('ov-title'),
+    ovText: document.getElementById('ov-text'),
+    startBtn: document.getElementById('startBtn'),
+  };
+
+  let score=0, lives=3, wave=1;
+  let hi = +(localStorage.getItem('build2026-invaders-hi')||0);
+  ui.hi.textContent = hi;
+
+  // Player
+  const PLAYER_W = 11*4, PLAYER_H = 11*4;
+  const player = { x: W/2 - PLAYER_W/2, y: H - 70, w: PLAYER_W, h: PLAYER_H, cooldown:0, alive:true, blink:0 };
+
+  // Bullets
+  const bullets = []; // {x,y,vy,from:'p'|'e'}
+  const explosions = []; // {x,y,t}
+
+  // Invaders
+  const COLS=11, ROWS=5;
+  const INV_W = 11*3, INV_H = 8*3; // each cell visual
+  const CELL_W = INV_W + 12, CELL_H = INV_H + 10;
+  let invaders = []; // {col,row,x,y,alive,type,color}
+  let invDir = 1, invStepTimer = 0, invStepInterval = 700, stepIdx = 0;
+  let formationLeft = 60, formationTop = 80;
+  let enemyFireTimer = 0, enemyFireInterval = 1100;
+
+  // Bunkers
+  let bunkers = []; // each: {x,y, grid:bool[][], cellSize}
+  const BUNKER_SCALE = 4;
+
+  // UFO
+  let ufo = null; // {x,y,vx, scoreVal}
+  let ufoTimer = 8000;
+
+  function resetBunkers(){
+    bunkers = [];
+    const baseBmp = S.bunker;
+    const w = baseBmp[0].length*BUNKER_SCALE;
+    const gap = (W - w*4) / 5;
+    const y = H - 160;
+    for(let i=0;i<4;i++){
+      const grid = baseBmp.map(row => row.slice());
+      bunkers.push({ x: gap + i*(w+gap), y, grid, scale:BUNKER_SCALE });
+    }
+  }
+
+  function buildFormation(){
+    invaders = [];
+    formationLeft = 60;
+    formationTop = 80;
+    for(let r=0;r<ROWS;r++){
+      for(let c=0;c<COLS;c++){
+        invaders.push({
+          col:c, row:r,
+          x: formationLeft + c*CELL_W,
+          y: formationTop + r*CELL_H,
+          alive:true,
+          type: ROW_TYPES[r],
+          color: ROW_COLORS[r],
+        });
+      }
+    }
+    invDir = 1;
+    stepIdx = 0;
+    invStepInterval = Math.max(120, 700 - (wave-1)*60);
+    enemyFireInterval = Math.max(280, 1100 - (wave-1)*120);
+    invStepTimer = invStepInterval;
+    enemyFireTimer = enemyFireInterval;
+    ufoTimer = 8000 + Math.random()*5000;
+  }
+
+  function newGame(){
+    score=0; lives=3; wave=1;
+    ui.score.textContent=0; ui.lives.textContent=3; ui.wave.textContent=1;
+    player.x = W/2 - PLAYER_W/2; player.alive=true; player.blink=0;
+    bullets.length=0; explosions.length=0;
+    resetBunkers();
+    buildFormation();
+    ufo=null;
+    setOverlay(false);
+    state = STATE.PLAYING;
+  }
+
+  function nextWave(){
+    wave++; ui.wave.textContent=wave;
+    bullets.length=0;
+    resetBunkers();
+    buildFormation();
+    sfx.levelup();
+    state = STATE.PLAYING;
+    setOverlay(false);
+  }
+
+  // ---------- Input ----------
+  const keys = new Set();
+  window.addEventListener('keydown', e=>{
+    const k = e.key.toLowerCase();
+    if(['arrowleft','arrowright',' ','a','d','p','m','enter'].includes(k)) e.preventDefault();
+    keys.add(k);
+    if(k==='enter'){
+      if(state===STATE.TITLE || state===STATE.GAMEOVER) newGame();
+      else if(state===STATE.WAVECLEAR) nextWave();
+    }
+    if(k==='p'){
+      if(state===STATE.PLAYING){ state=STATE.PAUSED; setOverlay(true,'PAUSED','Press P or Enter to resume'); }
+      else if(state===STATE.PAUSED){ state=STATE.PLAYING; setOverlay(false); }
+    }
+    if(k==='m'){ setMute(!muted); }
+    if(k===' ' && state===STATE.PLAYING) tryShoot();
+  });
+  window.addEventListener('keyup', e=>{ keys.delete(e.key.toLowerCase()); });
+  ui.startBtn.addEventListener('click', ()=>{
+    if(state===STATE.TITLE || state===STATE.GAMEOVER) newGame();
+    else if(state===STATE.WAVECLEAR) nextWave();
+    else if(state===STATE.PAUSED){ state=STATE.PLAYING; setOverlay(false); }
+  });
+
+  function setOverlay(show, title, text, btn){
+    if(!show){ ui.overlay.classList.add('hidden'); return; }
+    ui.overlay.classList.remove('hidden');
+    if(title) ui.ovTitle.textContent=title;
+    if(text) ui.ovText.textContent=text;
+    if(btn) ui.startBtn.textContent=btn;
+  }
+
+  function tryShoot(){
+    if(!player.alive) return;
+    if(player.cooldown>0) return;
+    // limit player bullets to 2 on screen
+    const live = bullets.filter(b=>b.from==='p').length;
+    if(live>=2) return;
+    bullets.push({ x: player.x + player.w/2 - 2, y: player.y - 6, w:4, h:12, vy:-560, from:'p' });
+    player.cooldown = 0.28;
+    sfx.shoot();
+  }
+
+  // ---------- Update ----------
+  let last = performance.now();
+  function loop(now){
+    const dt = Math.min(0.05,(now-last)/1000);
+    last = now;
+    if(state===STATE.PLAYING) update(dt);
+    render();
+    requestAnimationFrame(loop);
+  }
+
+  function aliveInvaders(){ return invaders.filter(v=>v.alive); }
+
+  function update(dt){
+    // Player
+    if(player.alive){
+      const speed = 320;
+      if(keys.has('arrowleft')||keys.has('a')) player.x -= speed*dt;
+      if(keys.has('arrowright')||keys.has('d')) player.x += speed*dt;
+      player.x = Math.max(10, Math.min(W-10-player.w, player.x));
+      player.cooldown = Math.max(0, player.cooldown-dt);
+    } else {
+      player.blink -= dt;
+      if(player.blink<=0){
+        if(lives<=0){
+          state = STATE.GAMEOVER;
+          if(score>hi){ hi=score; localStorage.setItem('build2026-invaders-hi',hi); ui.hi.textContent=hi; }
+          setOverlay(true,'GAME OVER',`Score ${score} · High ${hi}. Press Enter to play again.`,'Press Enter to Restart');
+          sfx.gameover();
+          return;
+        }
+        player.alive=true;
+        player.x = W/2 - PLAYER_W/2;
+      }
+    }
+
+    // Invader stepping
+    invStepTimer -= dt*1000;
+    const alive = aliveInvaders();
+    const target = Math.max(80, invStepInterval * (alive.length / (ROWS*COLS)));
+    if(invStepTimer<=0){
+      invStepTimer = target;
+      stepIdx++;
+      sfx.step(stepIdx);
+      // try move horizontally
+      const dx = invDir * 10;
+      let edge=false;
+      for(const v of alive){
+        if(v.x+dx < 10 || v.x+dx+INV_W > W-10){ edge=true; break; }
+      }
+      if(edge){
+        invDir *= -1;
+        for(const v of alive) v.y += 18;
+      } else {
+        for(const v of alive) v.x += dx;
+      }
+      // reach the bottom?
+      for(const v of alive){
+        if(v.y + INV_H >= player.y){
+          loseLife(true);
+          break;
+        }
+      }
+    }
+
+    // Enemy fire
+    enemyFireTimer -= dt*1000;
+    if(enemyFireTimer<=0 && alive.length){
+      enemyFireTimer = enemyFireInterval * (0.6 + Math.random()*0.8);
+      // pick a shooter from bottom of each column
+      const cols = {};
+      for(const v of alive){
+        if(!cols[v.col] || v.y > cols[v.col].y) cols[v.col]=v;
+      }
+      const shooters = Object.values(cols);
+      const s = shooters[Math.floor(Math.random()*shooters.length)];
+      bullets.push({ x:s.x+INV_W/2-2, y:s.y+INV_H, w:4, h:12, vy: 220+wave*20, from:'e' });
+    }
+
+    // UFO
+    ufoTimer -= dt*1000;
+    if(!ufo && ufoTimer<=0){
+      const fromLeft = Math.random()<0.5;
+      ufo = { x: fromLeft? -80 : W+80, y: 36, vx: (fromLeft?1:-1)* (90+wave*8), w: 13*4, h:5*4, scoreVal: [50,100,150,300][Math.floor(Math.random()*4)] };
+      sfx.ufo();
+    }
+    if(ufo){
+      ufo.x += ufo.vx*dt;
+      if(ufo.x < -120 || ufo.x > W+120){ ufo=null; ufoTimer = 10000+Math.random()*8000; }
+    }
+
+    // Bullets
+    for(const b of bullets){ b.y += b.vy*dt; }
+    // Off-screen
+    for(let i=bullets.length-1;i>=0;i--){
+      const b=bullets[i];
+      if(b.y<-20 || b.y>H+20) bullets.splice(i,1);
+    }
+
+    // Collisions: player bullets vs invaders / ufo / bunker
+    for(let i=bullets.length-1;i>=0;i--){
+      const b = bullets[i];
+      if(b.from==='p'){
+        // ufo
+        if(ufo && rectHit(b, {x:ufo.x,y:ufo.y,w:ufo.w,h:ufo.h})){
+          score += ufo.scoreVal; ui.score.textContent=score;
+          explosions.push({x:ufo.x+ufo.w/2-26, y:ufo.y-6, t:0.35});
+          ufo=null; ufoTimer = 12000+Math.random()*8000;
+          bullets.splice(i,1); sfx.bonus(); continue;
+        }
+        // invaders
+        let hit=false;
+        for(const v of alive){
+          if(!v.alive) continue;
+          if(rectHit(b,{x:v.x,y:v.y,w:INV_W,h:INV_H})){
+            v.alive=false;
+            score += [30,20,10][v.type];
+            ui.score.textContent=score;
+            explosions.push({x:v.x-3, y:v.y-3, t:0.25});
+            bullets.splice(i,1); sfx.explode(); hit=true; break;
+          }
+        }
+        if(hit) continue;
+        // bunker
+        if(bunkerHit(b)){ bullets.splice(i,1); sfx.hit(); continue; }
+      } else {
+        // enemy bullet vs player
+        if(player.alive && rectHit(b,{x:player.x+6,y:player.y+6,w:player.w-12,h:player.h-12})){
+          bullets.splice(i,1);
+          loseLife(false);
+          continue;
+        }
+        if(bunkerHit(b)){ bullets.splice(i,1); sfx.hit(); continue; }
+      }
+    }
+
+    // Explosions
+    for(let i=explosions.length-1;i>=0;i--){
+      explosions[i].t -= dt;
+      if(explosions[i].t<=0) explosions.splice(i,1);
+    }
+
+    // Wave clear?
+    if(aliveInvaders().length===0 && state===STATE.PLAYING){
+      state = STATE.WAVECLEAR;
+      setOverlay(true, `WAVE ${wave} CLEAR`, `Score ${score}. Press Enter for wave ${wave+1}.`, 'Press Enter');
+    }
+  }
+
+  function loseLife(reachedBottom){
+    if(!player.alive) return;
+    explosions.push({x:player.x-3, y:player.y-3, t:0.4});
+    player.alive=false;
+    player.blink=1.0;
+    lives--; ui.lives.textContent=Math.max(0,lives);
+    sfx.explode();
+    if(reachedBottom){ lives=0; }
+    if(lives<=0){
+      // handled in update when blink finishes
+    }
+  }
+
+  function rectHit(a,b){
+    return a.x < b.x+b.w && a.x+a.w > b.x && a.y < b.y+b.h && a.y+a.h > b.y;
+  }
+
+  function bunkerHit(b){
+    for(const bk of bunkers){
+      const rows = bk.grid.length, cols=bk.grid[0].length, sc=bk.scale;
+      if(b.x+b.w < bk.x || b.x > bk.x+cols*sc) continue;
+      if(b.y+b.h < bk.y || b.y > bk.y+rows*sc) continue;
+      // find pixel hit
+      const cx = Math.floor((b.x + b.w/2 - bk.x)/sc);
+      // scan vertically depending on direction
+      const goingUp = b.vy<0;
+      const range = goingUp ? [...Array(rows).keys()] : [...Array(rows).keys()].reverse();
+      for(const ry of range){
+        const py = bk.y + ry*sc;
+        if(py < b.y-sc || py > b.y+b.h+sc) continue;
+        if(cx<0||cx>=cols) continue;
+        if(bk.grid[ry][cx]){
+          // erode a small area
+          erode(bk, cx, ry, 2);
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  function erode(bk, cx, cy, r){
+    const rows=bk.grid.length, cols=bk.grid[0].length;
+    for(let dy=-r;dy<=r;dy++){
+      for(let dx=-r;dx<=r;dx++){
+        if(dx*dx+dy*dy>r*r+1) continue;
+        const x=cx+dx, y=cy+dy;
+        if(x>=0&&x<cols&&y>=0&&y<rows) bk.grid[y][x]=0;
+      }
+    }
+  }
+
+  // ---------- Render ----------
+  function render(){
+    // bg
+    const grad = ctx.createLinearGradient(0,0,0,H);
+    grad.addColorStop(0,'#0B1020'); grad.addColorStop(1,'#1b2350');
+    ctx.fillStyle=grad; ctx.fillRect(0,0,W,H);
+    // starfield-ish accent dots (deterministic)
+    ctx.globalAlpha=0.5;
+    for(let i=0;i<60;i++){
+      const x=(i*97)%W, y=(i*53)%H;
+      ctx.fillStyle = i%5===0?COLORS.violet:i%5===1?COLORS.cyan:'#ffffff20';
+      ctx.fillRect(x,y,2,2);
+    }
+    ctx.globalAlpha=1;
+
+    // ground line in Build gradient
+    const g = ctx.createLinearGradient(0,0,W,0);
+    g.addColorStop(0,COLORS.violet); g.addColorStop(0.5,COLORS.cyan); g.addColorStop(1,COLORS.yellow);
+    ctx.fillStyle=g; ctx.fillRect(20, H-30, W-40, 2);
+
+    // bunkers
+    for(const bk of bunkers){
+      const rows=bk.grid.length, cols=bk.grid[0].length, sc=bk.scale;
+      for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){
+        if(bk.grid[r][c]){
+          ctx.fillStyle = COLORS.bunker;
+          ctx.fillRect(bk.x+c*sc, bk.y+r*sc, sc, sc);
+        }
+      }
+    }
+
+    // invaders
+    const wob = (stepIdx%2===0) ? 0 : 1;
+    for(const v of invaders){
+      if(!v.alive) continue;
+      const pal = {1: v.color, 2:'#ffffff'};
+      // simple wobble: shift one column
+      drawBitmap(S.inv[v.type], v.x + wob, v.y, 3, pal);
+    }
+
+    // ufo
+    if(ufo) drawBitmap(S.ufo, ufo.x, ufo.y, 4, UFO_PAL);
+
+    // player
+    if(player.alive || (player.blink>0 && Math.floor(player.blink*10)%2===0)){
+      drawBitmap(S.player, player.x, player.y, 4, PLAYER_PAL);
+    }
+
+    // bullets
+    for(const b of bullets){
+      if(b.from==='p'){
+        ctx.fillStyle=COLORS.bullet;
+      } else {
+        ctx.fillStyle=COLORS.enemyBullet;
+      }
+      ctx.fillRect(b.x,b.y,b.w,b.h);
+    }
+
+    // explosions
+    for(const e of explosions){
+      const pal = {1: e.t>0.15?COLORS.yellow:COLORS.red};
+      drawBitmap(S.explosion, e.x, e.y, 3, pal);
+    }
+
+    // lives icons
+    for(let i=0;i<lives-1;i++){
+      drawBitmap(S.player, 14 + i*(PLAYER_W*0.6), H-26, 2, PLAYER_PAL);
+    }
+  }
+
+  // initial overlay
+  setOverlay(true,'BUILD 2026 INVADERS','Defend the dev cloud. Shoot the invaders before they reach the keynote stage.','Press Enter to Start');
+
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
