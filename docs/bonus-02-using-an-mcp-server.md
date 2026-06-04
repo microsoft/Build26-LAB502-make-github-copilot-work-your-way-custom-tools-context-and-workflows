@@ -28,14 +28,14 @@ In this exercise you will install the remote Lab 502 MCP server in Visual Studio
 
 ### Install the MCP server
 
-1. [] Switch to **Visual Studio Code**.
-2. [] Open the **Command Palette** (<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd>).
+1.  Switch to **Visual Studio Code**.
+2.  Open the **Command Palette** (<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd>).
   - You can also use the **Agent Customizations** view to manage MCP servers, but the Command Palette is the most direct way to add a new one.
-3. [] Run **MCP: Add Server**.
-4. [] Choose **HTTP**.
-5. [] Paste the remote MCP server URL: `https://bld26lab502.azurewebsites.net/mcp`
-6. [] Name the server: `lab502-community-hub`
-7. [] Choose where to save it. **Global** is the easiest option for this lab because the server follows you across workspaces. **Workspace** is better if you want everyone opening the repo to get the same MCP server configuration.
+3.  Run **MCP: Add Server**.
+4.  Choose **HTTP**.
+5.  Paste the remote MCP server URL: `https://bld26lab502.azurewebsites.net/mcp`
+6.  Name the server: `lab502-community-hub`
+7.  Choose where to save it. **Global** is the easiest option for this lab because the server follows you across workspaces. **Workspace** is better if you want everyone opening the repo to get the same MCP server configuration.
 
 You should now have a **mcp.json** file (opened in Visual Studio Code), with content similar to this:
 
@@ -47,7 +47,7 @@ You should now have a **mcp.json** file (opened in Visual Studio Code), with con
             "type": "http"
         }
     },
-    "inputs": []
+    "inputs": 
 }
 ```
 
@@ -61,18 +61,18 @@ You can also hover over **lab502-community-hub** and see a status such as **Runn
 
 ### Confirm the server is connected
 
-8. [] Open the **Agent Customizations** view:
+8.  Open the **Agent Customizations** view:
 
 	- Click the **gear** icon in the Copilot Chat title bar and choose **Open Customizations**.
 	- Or open the **Command Palette** and run **Chat: Open Customizations**.
 
-9. [] Click **MCP Servers** in the left navigation.
-10. [] Find **lab502-community-hub** and confirm it is configured and running.
-11. [] Close the **Agent Customizations** view.
-12. [] Open Copilot Chat.
-13. [] Click **Configure tools** at the bottom of the prompt input text box. The icon looks like two small horizontal sliders and sits just to the right of the model dropdown.
+9.  Click **MCP Servers** in the left navigation.
+10.  Find **lab502-community-hub** and confirm it is configured and running.
+11.  Close the **Agent Customizations** view.
+12.  Open Copilot Chat.
+13.  Click **Configure tools** at the bottom of the prompt input text box. The icon looks like two small horizontal sliders and sits just to the right of the model dropdown.
    ![configure tools icon](assets/configure-tools.png)
-14. [] Look for tools from the **lab502-community-hub** family and expand it
+14.  Look for tools from the **lab502-community-hub** family and expand it
 
 You should see tools in this family:
 

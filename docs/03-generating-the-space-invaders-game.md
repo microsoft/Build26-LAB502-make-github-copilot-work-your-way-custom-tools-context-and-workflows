@@ -16,10 +16,10 @@ Press <kbd>Shift</kbd>+<kbd>Tab</kbd> to cycle between modes. In plan mode, the 
 > Copy either file into your workspace and open it in a browser to play. That said, we encourage you to try generating your own at least once — it's a great way to get hands-on with Copilot's plan mode, and it's fun :)
 > If you go this route, there are some prompts later that will need some adjustment since they refer to the generated file, but nothing major.
 
-1. [] Start Copilot by running `copilot` at the shell prompt and pressing <kbd>Enter</kbd>. If you did not quitted the previous session, run `/quit` first, then start Copilot again.
-2. [] Select the model you are going to use. We have pre-selected **GPT-5.4** with **low** effort for you (you can see the selected model in the Copilot status bar at the bottom right of the terminal) by saving it in the Copilot config file. To pick a different model, run `/model` and choose one (we recommend **GPT 5.4** or **Claude Sonnet 4.6**). If you change the model, please make sure to select **low** effort for faster results.
-3. [] Switch to plan mode by pressing <kbd>Shift</kbd>+<kbd>Tab</kbd> until **Plan** appears in the status bar (bottom right) — or, even simpler, start your prompt with **/plan** to switch to plan mode automatically and generate a plan for your task.
-4. [] **This is where we ask you to be creative** and generate a distinctive game; later you will use Copilot to easily share your results with the other attendees. Below is an example **base prompt** (it is very important to indicate that we want the game in a single HTML file so it can be shared easily). You can use this base prompt and add your own twist to it, or write your own prompt entirely (as long as you ask for a single HTML output):
+1.  Start Copilot by running `copilot` at the shell prompt and pressing <kbd>Enter</kbd>. If you did not quitted the previous session, run `/quit` first, then start Copilot again.
+2.  Select the model you are going to use. We have pre-selected **GPT-5.4** with **low** effort for you (you can see the selected model in the Copilot status bar at the bottom right of the terminal) by saving it in the Copilot config file. To pick a different model, run `/model` and choose one (we recommend **GPT 5.4** or **Claude Sonnet 4.6**). If you change the model, please make sure to select **low** effort for faster results.
+3.  Switch to plan mode by pressing <kbd>Shift</kbd>+<kbd>Tab</kbd> until **Plan** appears in the status bar (bottom right) — or, even simpler, start your prompt with **/plan** to switch to plan mode automatically and generate a plan for your task.
+4.  **This is where we ask you to be creative** and generate a distinctive game; later you will use Copilot to easily share your results with the other attendees. Below is an example **base prompt** (it is very important to indicate that we want the game in a single HTML file so it can be shared easily). You can use this base prompt and add your own twist to it, or write your own prompt entirely (as long as you ask for a single HTML output):
 
 	`/plan Generate a Space Invaders game in a single HTML file`
 
@@ -34,11 +34,11 @@ Press <kbd>Shift</kbd>+<kbd>Tab</kbd> to cycle between modes. In plan mode, the 
 	>
 	> Simple, effective, and intentionally open-ended. It gives Copilot useful context, but still leaves a lot of creative control to the model. We are sure you can be more creative than us :)
 
-5. [] When Copilot is finished with the plan, you can review it, execute it, or refine it. Once Copilot shows **Plan Ready for Review**, press <kbd>Ctrl</kbd>+<kbd>E</kbd> to review inside Copilot or press <kbd>Ctrl</kbd>+<kbd>Y</kbd> to see the plan in Visual Studio Code.
+5.  When Copilot is finished with the plan, you can review it, execute it, or refine it. Once Copilot shows **Plan Ready for Review**, press <kbd>Ctrl</kbd>+<kbd>E</kbd> to review inside Copilot or press <kbd>Ctrl</kbd>+<kbd>Y</kbd> to see the plan in Visual Studio Code.
 
 	![Copilot showing the Plan Ready for Review prompt with options to accept, refine, or exit plan mode](assets/copilot-cli-plan-ready-review.png)
 
-6. [] Select the option **Accept plan and build on autopilot**. (**If** Copilot only shows **Accept plan and build on default permissions**, select it and then run `/allow-all` to switch to autopilot mode.)
+6.  Select the option **Accept plan and build on autopilot**. (**If** Copilot only shows **Accept plan and build on default permissions**, select it and then run `/allow-all` to switch to autopilot mode.)
 
 > [!TIP] Copilot also presents you with other options:
 >	- **Accept plan and build on default permissions** — Copilot will execute the plan but ask for your permission before each step that requires permissions. This is a good option when you want more control over execution and don't mind being interrupted.

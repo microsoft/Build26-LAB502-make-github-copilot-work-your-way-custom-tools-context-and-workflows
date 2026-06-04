@@ -16,7 +16,7 @@ Congratulations - you made it through the lab! In a single session you went from
 - **Created an agent skill** - Turned a multi-step workflow into a **SKILL.md** to upload games to the Lab 502 Community Hub.
   - **Shared the game** - Shared the game with the community using the created skill.
 
-![](assets/lab-participants.png)
+!(assets/lab-participants.png)
 
 ## Customization types at a glance
 

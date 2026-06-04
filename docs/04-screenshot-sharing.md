@@ -24,15 +24,15 @@ In short: you describe **what** you want ("screenshot this page and share it"), 
 
 In this exercise you will enable the **web-screenshotter** agent in your current Copilot CLI session and ask it, in plain English, to capture the running Space Invaders game and share the screenshot with the rest of the community.
 
-1. [] Return to your existing Copilot CLI interactive session (the same one where you generated the game).
-2. [] Run `/allow-all on` to enable autopilot mode to ensure we don't need to approve tool use or agent actions while the agent is running.
-3. [] Open the agent picker by running:
+1.  Return to your existing Copilot CLI interactive session (the same one where you generated the game).
+2.  Run `/allow-all on` to enable autopilot mode to ensure we don't need to approve tool use or agent actions while the agent is running.
+3.  Open the agent picker by running:
 
 	`/agent` and press <kbd>Enter</kbd>.
 
 	You should see **Default (current)** and the **web-screenshotter** agent in the list. It became available when you installed the **space-invaders-makers** plugin in module "Installing the community plugin". Either select it by number or use the arrow keys to navigate the list and confirm with <kbd>Enter</kbd>.
 
-4. [] Ask Copilot to take and share a screenshot of your game by simply typing a natural-language prompt like:
+4.  Ask Copilot to take and share a screenshot of your game by simply typing a natural-language prompt like:
 
 	```text
 	Take a screenshot of the generated Space Invaders game and share the screenshot. Before taking the screenshot try to start the game.
@@ -40,7 +40,7 @@ In this exercise you will enable the **web-screenshotter** agent in your current
 
 	Notice how high-level that prompt is. There is **no** mention of Playwright, no URL, no file path, no upload endpoint, and no filename. Because you are in the same session where the game was generated, Copilot already has the file context. You only describe the **outcome** you want. Copilot recognizes that the request matches the **web-screenshotter** agent's description and delegates the job to it. It will also try to start the game first, because you asked for that.
 
-5. [] Watch the agent work. Because the Playwright MCP server is configured **without** the **--headless** flag (see the agent's front matter in the previous module), a real Microsoft Edge window will pop up. You will see the agent:
+5.  Watch the agent work. Because the Playwright MCP server is configured **without** the **--headless** flag (see the agent's front matter in the previous module), a real Microsoft Edge window will pop up. You will see the agent:
 	- Resolve the path to the generated HTML file in your workspace.
 	- Open it in the browser.
 	- Try to start the game (for example, by pressing a key or clicking a button — exactly the kind of "interaction before screenshot" step the agent's instructions allow).
@@ -51,7 +51,7 @@ In this exercise you will enable the **web-screenshotter** agent in your current
 
 	You can switch back to the terminal to see the agent's progress and final success message, but feel free to admire the browser automation doing its thing in the meantime (don't close the browser window though, that would cause the agent to fail).
 
-6. [] When the agent finishes, it will report success along with the artifact returned by the Lab 502 Community Hub (typically a confirmation that the screenshot was uploaded). Your screenshot will appear on the **Live Activity Board** displayed on the big screen in the conference room, alongside the other attendees' screenshots. You can also view it directly at <https://bld26lab502.azurewebsites.net/activity>.
+6.  When the agent finishes, it will report success along with the artifact returned by the Lab 502 Community Hub (typically a confirmation that the screenshot was uploaded). Your screenshot will appear on the **Live Activity Board** displayed on the big screen in the conference room, alongside the other attendees' screenshots. You can also view it directly at <https://bld26lab502.azurewebsites.net/activity>.
 
 > [!NOTE]
 > Notice that we never told Copilot **where** the game's HTML file lives on disk. It picked that up from the **context of the current session** — the same session in which you generated the game in the previous module — so the file path is already part of the conversation history. If you ran this exercise from a fresh Copilot session (or after a **/clear**), that context would be gone and you would need to either tell the agent the path explicitly (for example, `Take a screenshot of @C:\Users\LabUser\invaders\index.html and share it`) or let Copilot figure it out on its own by exploring the workspace.

@@ -14,34 +14,34 @@ Non-interactive mode is different: you pass a single prompt directly on the comm
 
 You'll use the **/plugin** slash commands to register a plugin marketplace and install a plugin from it.
 
-1. [] Return to your existing Copilot CLI interactive session.
-2. [] List the marketplaces that are already registered:
+1.  Return to your existing Copilot CLI interactive session.
+2.  List the marketplaces that are already registered:
 
 	`/plugin marketplace list`
 
 	You will see the built-in marketplaces **github/copilot-cli-plugins** and **github/awesome-copilot**.
 
-3. [] Add the **community-hub** marketplace by running:
+3.  Add the **community-hub** marketplace by running:
 
 	`/plugin marketplace add microsoft/Build26-LAB502-make-github-copilot-work-your-way-custom-tools-context-and-workflows`
 
-4. [] List the plugins available in that marketplace:
+4.  List the plugins available in that marketplace:
 
 	`/plugin marketplace browse community-hub`
 
 	You should see the list of plugins published in the **community-hub** marketplace. There is a single plugin: **space-invaders-makers**.
 
-5. [] Install the **space-invaders-makers** plugin by running:
+5.  Install the **space-invaders-makers** plugin by running:
 
 	`/plugin install space-invaders-makers@community-hub`
 
-6. [] Verify what the plugin installed by running the `/plugin list` slash command.
+6.  Verify what the plugin installed by running the `/plugin list` slash command.
 
 	You should see **space-invaders-makers@community-hub** on the list of installed plugins.
 
-7. [] Run `/quit` to exit the Copilot CLI session.
+7.  Run `/quit` to exit the Copilot CLI session.
 
-8. [] You will return to the shell prompt.
+8.  You will return to the shell prompt.
 
 
 > [!WARNING]
