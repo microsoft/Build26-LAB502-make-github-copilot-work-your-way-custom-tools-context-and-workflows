@@ -28,7 +28,7 @@ Why this matters:
 A weak agent skill has a vague **description** (so Copilot never picks it) or stuffs business logic into the Markdown that should live in a script. A strong one has a **precise, intent-rich description**, a short list of **clear steps**, and delegates deterministic work to small, focused scripts. Keep **SKILL.md** lean; put long reference material in **references/**, reusable templates in **assets/**, and executable logic in **scripts/**.
 
 > [!TIP]
-> To make this exercise possible, we have published an **OpenAPI specification** for the Invaders Gallery's upload API at <https://bld26lab502.azurewebsites.net/api/openapi.json>. The agent can read that spec to discover the correct endpoint, HTTP method, request shape, and constraints, with no guessing or scraping required, so there is no need to describe API details when building the skill.
+> To make this exercise possible, we have published an **OpenAPI specification** for the Invaders Gallery's upload API at <http://localhost:1345/api/openapi.json>. The agent can read that spec to discover the correct endpoint, HTTP method, request shape, and constraints, with no guessing or scraping required, so there is no need to describe API details when building the skill.
 
 > [!NOTE]
 > Skills are not only for writing code or creating files. They can also give the agent structured guidance for complex decisions, reviews, or operational workflows. For example, the [**secret-scanning** skill][secret-scanning-skill] from Awesome Copilot guides Copilot through when to use secret scanning, how to configure push protection and custom patterns, how to triage alerts, and when to use the Advanced Security plugin for pre-commit scanning.
@@ -44,7 +44,7 @@ You will build a project agent skill that lets anyone submit their generated Spa
 5.  In the chat input, run the **/create-skill** slash command. As a suggestion, paste the following:
 
 ```text
-/create-skill Create a project agent skill that allows submitting a generated Space Invaders game. The user asks to upload a copy of their game and specifies a display name and the HTML filename that contains the source (max size 200KB). The skill must include cross-platform helper scripts (bash and PowerShell) that perform the actual HTTP upload using the API described in the OpenAPI spec at https://bld26lab502.azurewebsites.net/api/openapi.json  the SKILL.md should instruct the agent to run the appropriate script rather than making the HTTP call inline.
+/create-skill Create a project agent skill that allows submitting a generated Space Invaders game. The user asks to upload a copy of their game and specifies a display name and the HTML filename that contains the source (max size 200KB). The skill must include cross-platform helper scripts (bash and PowerShell) that perform the actual HTTP upload using the API described in the OpenAPI spec at http://localhost:1345/api/openapi.json  the SKILL.md should instruct the agent to run the appropriate script rather than making the HTTP call inline.
 ```
 
 6.  Copilot may ask a couple of clarifying questions (for example which scripting language to use, where to store the skill, or how to handle the file-size limit) or permission to run tools. Answer them, and let it propose the agent skill in a diff view.
@@ -58,7 +58,7 @@ You will build a project agent skill that lets anyone submit their generated Spa
 	- Have a **SKILL.md** with YAML front matter declaring at least a **name** and an **intent-rich description** (so the agent picks it up when a user says "share my game", "upload to the gallery", and so on).
 	- Clearly state the **inputs** the user must provide: the **display name** of the game and the **HTML filename** that contains the source.
 	- Enforce the **200 KB maximum size** for the uploaded file.
-	- Reference the API endpoint at <https://bld26lab502.azurewebsites.net/> so the upload targets the correct endpoint and request shape.
+	- Reference the API endpoint at <http://localhost:1345/> so the upload targets the correct endpoint and request shape.
 	- Include a small helper **script** next to **SKILL.md** that performs the actual HTTP upload, with the **SKILL.md** instructing the agent to invoke it.
 
 7.  Click **Keep** to accept the file(s) or tweak/refine them as needed and then accept.
@@ -85,7 +85,7 @@ Replace **Your Name** with your actual name so your entry is unique in the galle
 
 4.  Copilot should recognize the intent, pick up your new agent skill (matching its **description**), and walk through its steps: verifying the file exists, checking it is under 200 KB, and calling the helper script to POST the HTML to the gallery API.
 
-4.  If Copilot asks clarifying questions (for example for a missing name or filename), answer them or for permissions to run tools allow them. When the upload succeeds, switch back to the **Invaders Gallery** in your browser **https://bld26lab502.azurewebsites.net/gallery** and confirm the new entry appears alongside the screenshots you shared in module "Sharing a screenshot with the community".
+4.  If Copilot asks clarifying questions (for example for a missing name or filename), answer them or for permissions to run tools allow them. When the upload succeeds, switch back to the **Invaders Gallery** in your browser **http://localhost:1345/gallery** and confirm the new entry appears alongside the screenshots you shared in module "Sharing a screenshot with the community".
 
 > [!TIP]
 > Notice the `#index.html` in the example prompt above. Typing **#** in the chat input triggers auto-complete: start typing the file name and pick it from the list. This **attaches the file as context** so Copilot knows its exact location, instead of having to guess the path or search the workspace for it. Use it any time a prompt or skill needs a specific file as input.

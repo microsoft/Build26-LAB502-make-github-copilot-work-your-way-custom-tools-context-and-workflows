@@ -51,7 +51,7 @@ In this exercise you will enable the **web-screenshotter** agent in your current
 
 	You can switch back to the terminal to see the agent's progress and final success message, but feel free to admire the browser automation doing its thing in the meantime (don't close the browser window though, that would cause the agent to fail).
 
-6.  When the agent finishes, it will report success along with the artifact returned by the Lab 502 Community Hub (typically a confirmation that the screenshot was uploaded). Your screenshot will appear on the **Live Activity Board** displayed on the big screen in the conference room, alongside the other attendees' screenshots. You can also view it directly at <https://bld26lab502.azurewebsites.net/activity>.
+6.  When the agent finishes, it will report success along with the artifact returned by the Lab 502 Community Hub (typically a confirmation that the screenshot was uploaded). Your screenshot will appear on the **Live Activity Board** displayed on the big screen in the conference room, alongside the other attendees' screenshots. You can also view it directly at <http://localhost:1345/activity>.
 
 > [!NOTE]
 > Notice that we never told Copilot **where** the game's HTML file lives on disk. It picked that up from the **context of the current session** — the same session in which you generated the game in the previous module — so the file path is already part of the conversation history. If you ran this exercise from a fresh Copilot session (or after a **/clear**), that context would be gone and you would need to either tell the agent the path explicitly (for example, `Take a screenshot of @<path-to-your-invaders-folder>/index.html and share it`) or let Copilot figure it out on its own by exploring the workspace.

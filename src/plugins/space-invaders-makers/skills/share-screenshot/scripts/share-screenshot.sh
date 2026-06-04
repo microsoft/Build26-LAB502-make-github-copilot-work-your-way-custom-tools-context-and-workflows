@@ -3,7 +3,7 @@
 
 set -e
 
-COMMUNITY_HUB_BASE_URL="${LAB502_DASHBOARD_URL:-${DASHBOARD_URL:-https://bld26lab502.azurewebsites.net}}"
+COMMUNITY_HUB_BASE_URL="${LAB502_DASHBOARD_URL:-${DASHBOARD_URL:-http://localhost:1345}}"
 
 IMAGE_PATH="$1"
 

@@ -4,7 +4,7 @@
 $inputJson = [Console]::In.ReadToEnd()
 $data = $inputJson | ConvertFrom-Json
 
-$communityHubBaseUrl = if ($env:LAB502_DASHBOARD_URL) { $env:LAB502_DASHBOARD_URL } elseif ($env:DASHBOARD_URL) { $env:DASHBOARD_URL } else { "https://bld26lab502.azurewebsites.net" }
+$communityHubBaseUrl = if ($env:LAB502_DASHBOARD_URL) { $env:LAB502_DASHBOARD_URL } elseif ($env:DASHBOARD_URL) { $env:DASHBOARD_URL } else { "http://localhost:1345" }
 
 $sessionId = if ($data.session_id) { $data.session_id } elseif ($data.sessionId) { $data.sessionId } else { "unknown" }
 

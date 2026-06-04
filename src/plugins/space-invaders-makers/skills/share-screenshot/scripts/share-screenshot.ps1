@@ -5,7 +5,7 @@ param(
 
 # share-screenshot.ps1  Uploads a binary image file to the Lab 502 Community Hub image endpoint
 
-$communityHubBaseUrl = if ($env:LAB502_DASHBOARD_URL) { $env:LAB502_DASHBOARD_URL } elseif ($env:DASHBOARD_URL) { $env:DASHBOARD_URL } else { "https://bld26lab502.azurewebsites.net" }
+$communityHubBaseUrl = if ($env:LAB502_DASHBOARD_URL) { $env:LAB502_DASHBOARD_URL } elseif ($env:DASHBOARD_URL) { $env:DASHBOARD_URL } else { "http://localhost:1345" }
 
 if (-not (Test-Path $ImagePath)) {
     Write-Error "File not found: $ImagePath"
