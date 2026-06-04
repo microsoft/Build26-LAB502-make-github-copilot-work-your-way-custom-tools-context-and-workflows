@@ -26,10 +26,10 @@ You will push your Space Invaders project to a GitHub repository, create an issu
 
 ### Create a repository and push your code
 
-1.  Open **Edge** and navigate to `https://github.com/organizations/Skillable-Events/repositories/new` to create a new repository.
+1.  Open **Edge** and navigate to `https://github.com/new` to create a new repository.
 
 2.  Fill in the repository details:
-	- **Owner**: Make sure **Skillable-Events** is selected (it should be the default).
+	- **Owner**: Select the GitHub account or organization where you want to create the repository.
 	- **Repository name**: Choose something unique — for example, `space-invaders-<your-alias>` (replace **<your-alias>** with your alias or initial. Take note of the name you have chosen).
 	- Leave everything else as default.
 3.  Click the **Create repository** button.
@@ -49,10 +49,10 @@ You will push your Space Invaders project to a GitHub repository, create an issu
 
 ![copy to clipboard push to existing repository commands](assets/copy-push-existing-repository-commands.png)
 
-11.  Open a terminal and change to the space invaders directory if not already there (`c:\users\labuser\invaders`), then paste and run the commands you just copied to push your code to GitHub. The commands should look like this (notice the repo name is not correct in the example below):
+11.  Open a terminal and change to your **invaders** directory if you are not already there (for example, `cd <path-to-your-working-folder>/invaders`), then paste and run the commands you just copied to push your code to GitHub. The commands should look like this (notice the owner and repository name are placeholders in the example below):
 
-```ps1-notype-nocopy-
-git remote add origin https://github.com/Skillable-Events/space-invaders-XXXXXXXXX.git
+```ps1
+git remote add origin https://github.com/YOUR-GITHUB-OWNER/space-invaders.git
 git branch -M main
 git push -u origin main
 ```
@@ -119,7 +119,7 @@ You can delegate the next task to Copilot cloud agent in two ways. Use **Option 
 
 3.  Enter the following prompt in the chat input box. Use the copy button, then paste the prompt:
 
-```text-notype
+```text
 Track the player's highest score using localStorage and display it in the game's HUD (heads-up display) alongside the current score. When the player beats their high score, update it and show a brief celebration message.
 
 Keep all changes in the existing single HTML file — do not create additional files or add external dependencies.

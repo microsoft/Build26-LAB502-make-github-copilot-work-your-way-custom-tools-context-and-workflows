@@ -65,7 +65,7 @@ The **web-screenshotter** agent (defined in **agents/web-screenshotter.agent.md*
 
 The agent's front matter declares its identity, the tools it needs, and the MCP server it connects to:
 
-```yaml-notype-nocopy
+```yaml
 ---
 name: web-screenshotter
 description: Use this agent when a user asks to capture and send/share screenshots from one or more web pages.
@@ -86,7 +86,7 @@ Key things to note here:
 
 The agent body then describes a strict, step-by-step execution policy. The most important reliability rules are:
 
-```markdown-nocopy-notype
+```markdown
 - Treat sharing as mandatory. A screenshot task is NOT complete until `share-screenshot` succeeds.
 - Never claim "shared" unless you actually invoked `share-screenshot` in this run and got a success result.
 - For multiple screenshots, run capture + share for each screenshot and track each one independently.
@@ -113,7 +113,7 @@ The **share-screenshot** skill (defined in **skills/share-screenshot/SKILL.md**)
 
 Like the agent, the skill is defined as a Markdown file with a YAML front matter header:
 
-```markdown-nocopy-notype
+```markdown
 ---
 name: share-screenshot
 description: 'Use this only when a user explicitly asks to upload or share a screenshot image file to the Lab 502 Community Hub. Resolve the image path before uploading.'
@@ -129,7 +129,7 @@ The body of the skill is a structured natural-language instruction set that tell
 2. Verify the file exists.
 3. Detect the operating system of the environment where the command will run. Use the PowerShell script on Windows and the shell script on Linux or macOS.
 
-``````markdown-nocopy-notype
+``````markdown
 ### On Windows (PowerShell)
 
 ```powershell
@@ -162,7 +162,7 @@ Scripts are not required, but they make execution more predictable and reliable.
 The **hooks.json** file inside the hooks folder defines four hooks that trigger on specific events during the Copilot session. Each hook specifies a script to run when the event occurs, allowing us to capture telemetry data about user interactions and agent activity.
 
 (This is just a snippet of the **hooks.json** file. You can check the full file in the plugin repo — the structure is the same for all hooks.)
-```json-nocopy-notype
+```json
 {
   "version": 1,
   "hooks": {
@@ -191,7 +191,7 @@ The hooks trigger a PowerShell script on Windows and a bash script on Linux/macO
 
 For example, this is the definition of the **session-start.ps1** hook:
 
-```ps1-nocopy-notype
+```ps1
 # session-start.ps1 Hook: SessionStart
 # Sends session_id and user_info to http://localhost:1345/api/event/session_start as URL query parameters
 

@@ -25,7 +25,10 @@ In this exercise you will open Visual Studio Code, sign in to GitHub Copilot, op
 
 ### Open Visual Studio Code and authenticate to GitHub Copilot
 
-1.  Open **Visual Studio Code** (it is pinned on the taskbar).
+> [!NOTE]
+> You can skip the authentication steps below if you are already signed in to GitHub Copilot in Visual Studio Code from a previous session. Jump straight to opening the **Copilot Chat** view.
+
+1.  Open **Visual Studio Code**.
 2.  Click the Copilot icon in the bottom-right corner of the Visual Studio Code status bar, then click **Use AI Features**.
 
 	![Copilot icon in the Visual Studio Code status bar](assets/copilot-icon-activity-bar.png)

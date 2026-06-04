@@ -70,7 +70,7 @@ Now use the prompt you just created against the Space Invaders HTML file. In a c
 2.  Type **/** and notice that **thorough-documenter** now appears in the slash command list. That is your prompt file showing up as a first-class command.
 3.  Run the prompt and attach the HTML file as the input it expects. For example:
 
-	```text-nocopy-notype
+	```text
 	/thorough-documenter #index.html
 	```
 

@@ -48,7 +48,7 @@ Custom instructions come in **three scopes**, and you can combine them:
 Because the file is just **Markdown**, you could create **.github/copilot-instructions.md** by hand and start writing the rules. But staring at a blank file is rarely the fastest path. Instead, we will use the **/create-instructions** slash command to generate **repository instructions** as a head start, and then tweak the result if needed.
 
 1.  Switch to Visual Studio Code.
-2.  Open the **invaders** folder you have been working in: **File → Open Folder…** and select the **invaders** directory (**c:\Users\LabUser\invaders**). If prompted, choose **Yes, I trust the authors**.
+2.  Open the **invaders** folder you have been working in: **File → Open Folder…** and select the **invaders** directory you created at the start of the lab, inside whichever base folder you chose. If prompted, choose **Yes, I trust the authors**.
 3.  Confirm the single HTML file generated in module "Generating the Space Invaders game" is visible in the Explorer — **/create-instructions** works best when there is real code to analyze.
 4.  Open the **Copilot Chat** view: click the Copilot icon in the Activity Bar, or press <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>I</kbd>. Make sure the chat is in **Agent** mode (mode selector at the bottom of the chat input).
 5.  In the chat input, run the **/create-instructions** slash command with the following prompt:

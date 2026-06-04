@@ -39,7 +39,7 @@ In this exercise you will install the remote Lab 502 MCP server in Visual Studio
 
 You should now have a **mcp.json** file (opened in Visual Studio Code), with content similar to this:
 
-```json-notype-nocopy
+```json
 {
     "servers": {
         "lab502-community-hub": {
