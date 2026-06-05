@@ -52,7 +52,7 @@ You will build a project agent skill that lets anyone submit their generated Spa
 > [!TIP]
 > Visual Studio Code may prompt you to allow access to specific files or folders. Click **Allow** when prompted so Copilot can create the skill files in the right location.
 
-6.  Review the proposed agent skill. It should:
+7.  Review the proposed agent skill. It should:
 
 	- Live under the workspace so the whole team gets it.
 	- Have a **SKILL.md** with YAML front matter declaring at least a **name** and an **intent-rich description** (so the agent picks it up when a user says "share my game", "upload to the gallery", and so on).
@@ -61,7 +61,7 @@ You will build a project agent skill that lets anyone submit their generated Spa
 	- Reference the API endpoint at <http://localhost:1345/> so the upload targets the correct endpoint and request shape.
 	- Include a small helper **script** next to **SKILL.md** that performs the actual HTTP upload, with the **SKILL.md** instructing the agent to invoke it.
 
-7.  Click **Keep** to accept the file(s) or tweak/refine them as needed and then accept.
+8.  Click **Keep** to accept the file(s) or tweak/refine them as needed and then accept.
 
 > [!TIP]
 > Two things make an agent skill punch above its weight:
@@ -85,7 +85,7 @@ Replace **Your Name** with your actual name so your entry is unique in the galle
 
 4.  Copilot should recognize the intent, pick up your new agent skill (matching its **description**), and walk through its steps: verifying the file exists, checking it is under 200 KB, and calling the helper script to POST the HTML to the gallery API.
 
-4.  If Copilot asks clarifying questions (for example for a missing name or filename), answer them or for permissions to run tools allow them. When the upload succeeds, switch back to the **Invaders Gallery** in your browser **http://localhost:1345/gallery** and confirm the new entry appears alongside the screenshots you shared in module "Sharing a screenshot with the community".
+5.  If Copilot asks clarifying questions (for example for a missing name or filename), answer them or for permissions to run tools allow them. When the upload succeeds, switch back to the **Invaders Gallery** in your browser **http://localhost:1345/gallery** and confirm the new entry appears alongside the screenshots you shared in module "Sharing a screenshot with the community".
 
 > [!TIP]
 > Notice the `#index.html` in the example prompt above. Typing **#** in the chat input triggers auto-complete: start typing the file name and pick it from the list. This **attaches the file as context** so Copilot knows its exact location, instead of having to guess the path or search the workspace for it. Use it any time a prompt or skill needs a specific file as input.

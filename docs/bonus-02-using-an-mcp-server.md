@@ -47,7 +47,7 @@ You should now have a **mcp.json** file (opened in Visual Studio Code), with con
             "type": "http"
         }
     },
-    "inputs": 
+    "inputs": []
 }
 ```
 
