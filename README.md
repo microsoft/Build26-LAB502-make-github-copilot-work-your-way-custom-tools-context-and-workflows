@@ -68,9 +68,18 @@ Design a Copilot plugin that bundles a custom agent, two skills, and a post-edit
 
 1. [GitHub Copilot](https://docs.github.com/copilot)
 1. [GitHub Copilot CLI](https://docs.github.com/en/copilot/how-tos/set-up/install-copilot-cli)
+1. [GitHub Copilot app canvas extensions](https://docs.github.com/en/copilot/how-tos/github-copilot-app/working-with-canvas-extensions)
 1. [Visual Studio Code](https://code.visualstudio.com/docs/copilot/overview)
 1. [Playwright](https://learn.microsoft.com/microsoft-edge/playwright/)
 1. [Playwright MCP server](https://playwright.dev/docs/getting-started-mcp)
+
+### 🖼️ Community Canvas Sample
+
+This repo includes a project-scoped GitHub Copilot app canvas extension at [.github/extensions/lab502-community-canvas/extension.mjs](.github/extensions/lab502-community-canvas/extension.mjs). [Canvas extensions](https://docs.github.com/en/copilot/how-tos/github-copilot-app/working-with-canvas-extensions) are shared, interactive surfaces that open in the GitHub Copilot app side panel and let people and agents work from the same visible artifact.
+
+The Lab 502 Community canvas is a sample dashboard for showing live community data from the Community Hub backend. It registers a `Lab 502 Community` canvas, starts a local side-panel web server, and exposes agent-callable actions for `get_snapshot` and `list_tenants`. The canvas fetches backend data for tenants, activity metrics, screenshots, and uploaded games, then renders a live view with tenant selection, refresh controls, tool usage, screenshot thumbnails, and gallery links.
+
+By default, the sample points at `http://localhost:1345`, but the canvas input and on-screen controls let you change the backend URL, tenant, refresh interval, and uploaded-game limit. This makes it useful both as a live lab dashboard and as a reference implementation for building your own backend-backed Copilot canvas.
 
 ### 📚 Resources and Next Steps
 
