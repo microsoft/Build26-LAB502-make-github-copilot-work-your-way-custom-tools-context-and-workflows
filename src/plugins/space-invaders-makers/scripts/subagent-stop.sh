@@ -2,7 +2,7 @@
 # subagent-stop.sh — Hook: SubagentStop
 # Sends session_id to the Lab 502 Community Hub subagent-stop endpoint
 
-COMMUNITY_HUB_BASE_URL="${LAB502_DASHBOARD_URL:-${DASHBOARD_URL:-https://bld26lab502.azurewebsites.net}}"
+COMMUNITY_HUB_BASE_URL="${LAB502_DASHBOARD_URL:-${DASHBOARD_URL:-http://localhost:1345}}"
 
 INPUT=$(cat)
 

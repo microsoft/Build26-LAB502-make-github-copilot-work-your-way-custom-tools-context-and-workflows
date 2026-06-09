@@ -37,7 +37,7 @@ space-invaders-community-plugin/
 The skills sends events and screenshots to the Lab 502 Community Hub. By default, it uses:
 
 ```text
-https://bld26lab502.azurewebsites.net
+http://localhost:1345
 ```
 
 To point the plugin at a different hub instance, set one of these environment variables before starting VS Code:

@@ -47,11 +47,11 @@ Custom instructions come in **three scopes**, and you can combine them:
 
 Because the file is just **Markdown**, you could create **.github/copilot-instructions.md** by hand and start writing the rules. But staring at a blank file is rarely the fastest path. Instead, we will use the **/create-instructions** slash command to generate **repository instructions** as a head start, and then tweak the result if needed.
 
-1. [] Switch to Visual Studio Code.
-2. [] Open the **invaders** folder you have been working in: **File → Open Folder…** and select the **invaders** directory (**c:\Users\LabUser\invaders**). If prompted, choose **Yes, I trust the authors**.
-3. [] Confirm the single HTML file generated in module "Generating the Space Invaders game" is visible in the Explorer — **/create-instructions** works best when there is real code to analyze.
-4. [] Open the **Copilot Chat** view: click the Copilot icon in the Activity Bar, or press <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>I</kbd>. Make sure the chat is in **Agent** mode (mode selector at the bottom of the chat input).
-5. [] In the chat input, run the **/create-instructions** slash command with the following prompt:
+1.  Switch to Visual Studio Code.
+2.  Open the **invaders** folder you have been working in: **File → Open Folder…** and select the **invaders** directory you created at the start of the lab, inside whichever base folder you chose. If prompted, choose **Yes, I trust the authors**.
+3.  Confirm the single HTML file generated in module "Generating the Space Invaders game" is visible in the Explorer — **/create-instructions** works best when there is real code to analyze.
+4.  Open the **Copilot Chat** view: click the Copilot icon in the Activity Bar, or press <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>I</kbd>. Make sure the chat is in **Agent** mode (mode selector at the bottom of the chat input).
+5.  In the chat input, run the **/create-instructions** slash command with the following prompt:
 
 ```
 /create-instructions create the .github/copilot-instructions.md file. The game must always remain a single self-contained HTML file with no external dependencies.
@@ -63,8 +63,8 @@ Because the file is just **Markdown**, you could create **.github/copilot-instru
 >[!NOTE]
 > We just added what we think is really important, the rest of the instructions will be inferred by Copilot from the codebase and the conversation history. The more specific you are in the prompt, the better the generated instructions will be. You can also ask for a first draft and then refine it with follow-up prompts.
 
-6. [] Copilot will scan the workspace, may ask a couple of clarifying questions about scope and conventions or permission to run tools, and then propose a **.github/copilot-instructions.md** file (this is the well-known location for **repository-scoped** custom instructions). Review the proposal in the diff view before accepting it.
-7. [] Click **Keep** (or accept the suggested edits) to save the file.
+6.  Copilot will scan the workspace, may ask a couple of clarifying questions about scope and conventions or permission to run tools, and then propose a **.github/copilot-instructions.md** file (this is the well-known location for **repository-scoped** custom instructions). Review the proposal in the diff view before accepting it.
+7.  Click **Keep** (or accept the suggested edits) to save the file.
 
 ### Reviewing and tightening the generated file
 
@@ -84,9 +84,9 @@ Update .github/copilot-instructions.md to make it explicit that the game must re
 
 ### Verifying the instructions are picked up
 
-1. [] Start a new chat session by clicking the **+** icon at the top of the Copilot Chat view (this clears the previous context and starts a new session).
-2. [] Close all open files.
-3. [] Try a small change to confirm the rules are being followed, for example:
+1.  Start a new chat session by clicking the **+** icon at the top of the Copilot Chat view (this clears the previous context and starts a new session).
+2.  Close all open files.
+3.  Try a small change to confirm the rules are being followed, for example:
 
 `Add a small "Made at Microsoft Build 2026" footer to the game.`
 

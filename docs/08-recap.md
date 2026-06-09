@@ -3,7 +3,7 @@
 Congratulations - you made it through the lab! In a single session you went from an empty workspace to a working Space Invaders game, shared a screenshot through a community plugin, and built up your own set of GitHub Copilot customizations on top.
 
 > [!TIP]
-> Browse all the games built by other attendees in the **Invaders Gallery** at https://bld26lab502.azurewebsites.net/gallery.
+> Browse all the games built by other attendees in the **Invaders Gallery** at http://localhost:1345/gallery.
 
 ## What you did
 
@@ -16,7 +16,7 @@ Congratulations - you made it through the lab! In a single session you went from
 - **Created an agent skill** - Turned a multi-step workflow into a **SKILL.md** to upload games to the Lab 502 Community Hub.
   - **Shared the game** - Shared the game with the community using the created skill.
 
-![](assets/lab-participants.png)
+![Lab participants](assets/lab-participants.png)
 
 ## Customization types at a glance
 

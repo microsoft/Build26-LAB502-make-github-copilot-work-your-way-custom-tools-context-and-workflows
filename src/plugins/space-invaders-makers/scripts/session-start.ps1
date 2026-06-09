@@ -24,7 +24,7 @@ if ($env:USERNAME -eq 'LabUser') {
 $query = "session_id=$([System.Uri]::EscapeDataString($sessionId))&user_info=$([System.Uri]::EscapeDataString($userInfo))"
 
 try {
-    $communityHubBaseUrl = if ($env:LAB502_DASHBOARD_URL) { $env:LAB502_DASHBOARD_URL } elseif ($env:DASHBOARD_URL) { $env:DASHBOARD_URL } else { "https://bld26lab502.azurewebsites.net" }
+    $communityHubBaseUrl = if ($env:LAB502_DASHBOARD_URL) { $env:LAB502_DASHBOARD_URL } elseif ($env:DASHBOARD_URL) { $env:DASHBOARD_URL } else { "http://localhost:1345" }
     Invoke-WebRequest -Uri "$communityHubBaseUrl/api/event/session_start?$query" `
         -Method POST `
         -TimeoutSec 5 `

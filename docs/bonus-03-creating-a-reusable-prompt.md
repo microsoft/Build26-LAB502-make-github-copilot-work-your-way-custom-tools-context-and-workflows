@@ -26,16 +26,16 @@ Rather than writing the **.prompt.md** file by hand, we will use the built-in **
 
 You can author **any prompt you like** here. Pick something you actually want to reuse. If you don't have one in mind, the suggestion below works well for the rest of this lab and produces a useful, opinionated documentation prompt.
 
-1. [] Switch to **Visual Studio Code** (the same window where you have been working on the game).
-2. [] Open the **Copilot Chat** view if it isn't already visible (click the Copilot icon in the Activity Bar, or press <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>I</kbd>). Make sure the chat is in **Agent** mode.
-3. [] Start a **new chat session** by clicking the **+** icon at the top of the Copilot Chat view, so the previous conversation's context doesn't leak into the prompt wizard.
-4. [] In the chat input, run the **/create-prompt** slash command. You can pass a free-form description after it — the more concrete you are, the less back-and-forth the wizard needs. As a suggestion, paste the following:
+1.  Switch to **Visual Studio Code** (the same window where you have been working on the game).
+2.  Open the **Copilot Chat** view if it isn't already visible (click the Copilot icon in the Activity Bar, or press <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>I</kbd>). Make sure the chat is in **Agent** mode.
+3.  Start a **new chat session** by clicking the **+** icon at the top of the Copilot Chat view, so the previous conversation's context doesn't leak into the prompt wizard.
+4.  In the chat input, run the **/create-prompt** slash command. You can pass a free-form description after it — the more concrete you are, the less back-and-forth the wizard needs. As a suggestion, paste the following:
 
 ```text
 /create-prompt Create a workspace prompt called "thorough documenter". It documents a single file the user specifies, using JSDoc for JS and the appropriate doc-comment format for other languages. Follow the guidelines at https://developer.mozilla.org/en-US/docs/MDN/Writing_guidelines/Code_style_guide/JavaScript
 ```
 
-5. [] Copilot may ask a couple of clarifying questions (for example, whether to also document non-JavaScript files or how to handle missing input). Answer them, and let it propose the prompt file in a diff view.
+5.  Copilot may ask a couple of clarifying questions (for example, whether to also document non-JavaScript files or how to handle missing input). Answer them, and let it propose the prompt file in a diff view.
 
 > [!TIP]
 > Visual Studio Code may prompt you to allow access to specific files or folders or run tools. Click **Allow** when prompted so Copilot can read and create the necessary files.
@@ -43,7 +43,7 @@ You can author **any prompt you like** here. Pick something you actually want to
 > [!TIP]
 > We included a URL in the **/create-prompt** request on purpose. Copilot can read referenced web content and use it as guidance, so best practices from that page are reflected in the generated prompt file.
 
-6. [] Review the proposed **.prompt.md** file. It should:
+6.  Review the proposed **.prompt.md** file. It should:
 
 	- Live under the workspace (typically **.github/prompts/thorough-documenter.prompt.md**) so it is shared with the team.
 	- Have YAML front matter declaring at least a **description**.
@@ -51,7 +51,7 @@ You can author **any prompt you like** here. Pick something you actually want to
 	- Reference the **MDN JavaScript code style guide** as the source of truth for conventions.
 	- Tell the agent to use the **language-appropriate doc-comment format** (JSDoc for JavaScript, docstrings for Python, XML doc comments for C#, and so on).
 
-7. [] Click **Keep** to accept the file.
+7.  Click **Keep** to accept the file.
 
 > [!TIP]
 > If Copilot doesn't create the prompt file on the first attempt, just ask it again — the model sometimes needs a second try.
@@ -66,19 +66,19 @@ You can author **any prompt you like** here. Pick something you actually want to
 
 Now use the prompt you just created against the Space Invaders HTML file. In a chat, you provide context to a prompt the same way you provide context to any other request: with the `#` mention syntax.
 
-1. [] In the Copilot Chat input, start a new chat (click the **+** icon at the top of the chat view) so the previous context doesn't leak in.
-2. [] Type **/** and notice that **thorough-documenter** now appears in the slash command list. That is your prompt file showing up as a first-class command.
-3. [] Run the prompt and attach the HTML file as the input it expects. For example:
+1.  In the Copilot Chat input, start a new chat (click the **+** icon at the top of the chat view) so the previous context doesn't leak in.
+2.  Type **/** and notice that **thorough-documenter** now appears in the slash command list. That is your prompt file showing up as a first-class command.
+3.  Run the prompt and attach the HTML file as the input it expects. For example:
 
-	```text-nocopy-notype
+	```text
 	/thorough-documenter #index.html
 	```
 
 	The **#index.html** mention attaches the file to the chat as context, which is what the prompt is asking for as its input. (If you named your file differently, use that name instead.)
 
-4. [] Copilot will read the file, follow the rules baked into the prompt, and propose changes that add JSDoc comments to functions, document the structure, and explain the semantics of each section. Review the diff and accept the parts you like.
+4.  Copilot will read the file, follow the rules baked into the prompt, and propose changes that add JSDoc comments to functions, document the structure, and explain the semantics of each section. Review the diff and accept the parts you like.
 
-5. [] Review the changes by clicking the file in **Files changed** at the bottom of the Copilot Chat view, then click **Keep** to accept the changes.
+5.  Review the changes by clicking the file in **Files changed** at the bottom of the Copilot Chat view, then click **Keep** to accept the changes.
 
 > [!NOTE]
 > If you forget to attach a file with **#**, a well-written prompt should ask you for one rather than guessing. If yours silently picks an arbitrary file, that is a signal to tighten the **inputs** section of the prompt file.

@@ -9,7 +9,7 @@ $sessionId = if ($data.session_id) { $data.session_id } else { "unknown" }
 $query = "session_id=$([System.Uri]::EscapeDataString($sessionId))"
 
 try {
-    $communityHubBaseUrl = if ($env:LAB502_DASHBOARD_URL) { $env:LAB502_DASHBOARD_URL } elseif ($env:DASHBOARD_URL) { $env:DASHBOARD_URL } else { "https://bld26lab502.azurewebsites.net" }
+    $communityHubBaseUrl = if ($env:LAB502_DASHBOARD_URL) { $env:LAB502_DASHBOARD_URL } elseif ($env:DASHBOARD_URL) { $env:DASHBOARD_URL } else { "http://localhost:1345" }
     Invoke-WebRequest -Uri "$communityHubBaseUrl/api/event/user_prompt_submitted?$query" `
         -Method POST `
         -TimeoutSec 5 `

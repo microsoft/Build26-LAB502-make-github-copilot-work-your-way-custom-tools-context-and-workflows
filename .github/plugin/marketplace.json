@@ -2,7 +2,7 @@
     "name": "community-hub",
     "metadata": {
         "description": "Space Invaders community hub plugin for Build 2026 Lab 502",
-        "version": "1.0.0",
+        "version": "2.0.0",
         "pluginRoot": "./src/plugins"
     },
     "owner": {

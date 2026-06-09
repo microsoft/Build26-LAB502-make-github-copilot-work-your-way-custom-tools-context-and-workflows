@@ -1,9 +1,5 @@
 # Setting up the environment
 
-> [!Hint]
-> Under regular conditions you would need to ensure all prerequisites are installed, but don't worry. We have ensured this environment has all you need.
-
-
 > [!NOTE]
 > GitHub Copilot uses Large Language Models (LLMs), which generate responses probabilistically rather than deterministically. This means that the exact suggestions, code, and interactions you see may differ from what's shown in these instructions. This is normal and expected behavior! Use your best judgment to adapt the suggestions to your needs, and don't hesitate to iterate with Copilot if the first suggestion isn't quite right.
 
@@ -12,39 +8,28 @@
 
 ## GitHub Copilot CLI - Login
 
-> [!NOTE]
-> For your convenience we have the username and password in the instructions, but you can also see their values in the **Resources** tab.
-
-1. [] Open **Windows Terminal** (it's pinned on the taskbar). It is recommended that you maximize the terminal window.
-2. [] Create an **invaders** directory, navigate into it, and initialize a git repository by running the following commands:
-```-nocopy
+1.  Open a terminal of your choice. It is recommended that you maximize the terminal window.
+2.  Create an **invaders** directory, navigate into it, and initialize a git repository by running the following commands:
+```
 mkdir invaders
 cd invaders
 git init
 ```
-3. [] Press <kbd>Enter</kbd> to ensure the last command (git init) is executed.
+3.  Press <kbd>Enter</kbd> to ensure the last command (git init) is executed.
 
-4. [] Run `copilot update` (and press <kbd>Enter</kbd>) to ensure you have the latest version of GitHub Copilot CLI (you could also run `/update` from within a Copilot session, but let's do it upfront this time).
-5. [] Open a Copilot CLI session by running `copilot` at the shell prompt (and press <kbd>Enter</kbd>).
+4.  Run `copilot update` (and press <kbd>Enter</kbd>) to ensure you have the latest version of GitHub Copilot CLI (you could also run `/update` from within a Copilot session, but let's do it upfront this time).
+5.  Open a Copilot CLI session by running `copilot` at the shell prompt (and press <kbd>Enter</kbd>).
 
 ![Copilot CLI starting in the terminal](assets/copilog-in-terminal.png)
 
-6. [] After the intro animation, you will be prompted to confirm if you trust the current directory. Select **Yes, and remember this folder for future sessions**, or just press <kbd>2</kbd> to proceed. (Tip: every choice in Copilot CLI can be selected by pressing the corresponding number key — no need to use the arrow keys and <kbd>Enter</kbd>.)
-7. [] When asked if you want to set up the terminal for multi-line support, select **Yes**. This will allow you to write longer prompts by hitting <kbd>Shift</kbd>+<kbd>Enter</kbd>.
-8. [] Type `/login` and press <kbd>Enter</kbd> in the Copilot CLI session to start the login process.
-9. [] Select **GitHub.com** for the account type.
-10. [] Press <kbd>Enter</kbd> or click the **https://github.com/login/device** link to open the GitHub login page in your browser.
-11. [] Type `user_events` in the **Username or email address** field.
-12. [] Press the green **Sign in with your identity provider** button to sign in with an identity provider.
-13. [] Click the **Continue** green button on the **Single sign-on** page.
-16. [] Enter +++@lab.CloudPortalCredential(User1).Username+++ in the **Email, phone, or Skype** input field on the **Sign in** page and click **Next**.
-17. [] Enter +++@lab.CloudPortalCredential(User1).AccessToken+++ in the **Temporary Access Pass** input field and click **Sign in**.
-18. [] Click the **Continue** green button on the **Device Activation** page.
-19. [] Go back to the terminal, select the one-time code shown there (something like `D45F-XXXX`), and press <kbd>Enter</kbd> to copy the value to the clipboard.
-20. [] Switch back to the browser, paste the code, and click the **Continue** green button.
-21. [] Scroll down on the **Authorize GitHub Copilot CLI** page and click the **Authorize GitHub** green button to grant permissions to Copilot CLI.
-22. [] Close the browser once you see the **Congratulations, you're all set!** message and go back to the terminal.
-23. [] Copilot is now authenticated and ready to use in your terminal! You should see that your user account is also connected to the GitHub MCP server automatically.
+6.  After the intro animation, you will be prompted to confirm if you trust the current directory. Select **Yes, and remember this folder for future sessions**, or just press <kbd>2</kbd> to proceed. (Tip: every choice in Copilot CLI can be selected by pressing the corresponding number key — no need to use the arrow keys and <kbd>Enter</kbd>.)
+7.  When asked if you want to set up the terminal for multi-line support, select **Yes**. This will allow you to write longer prompts by hitting <kbd>Shift</kbd>+<kbd>Enter</kbd>.
+8.  Type `/login` and press <kbd>Enter</kbd> in the Copilot CLI session, then follow the on-screen prompts to authenticate with your GitHub account.
+
+	> [!NOTE]
+	> You can skip this step if you are already signed in to GitHub Copilot CLI from a previous session.
+
+9.  Once authentication completes, Copilot is ready to use in your terminal. You should also see that your account is automatically connected to the GitHub MCP server.
 
 > [!NOTE]
 > Having a git repository is not strictly necessary to use Copilot CLI, but it lets you take advantage of features such as rewinding a change.
@@ -55,13 +40,13 @@ Once inside the interactive session, you can start using Copilot CLI right away.
 
 **Typing prompts:** Simply type your question or request in natural language and press Enter. For example:
 
-```nocopy-notype
+```
 > Explain what a dataclass is in Python in simple terms
 ```
 
 **Executing shell commands:** Prefix a command with `!` to run it directly in your local shell without leaving the session:
 
-```nocopy-notype
+```
 > ! git status
 ```
 
@@ -71,7 +56,7 @@ Once inside the interactive session, you can start using Copilot CLI right away.
 
 **Including file context:** Use `@` followed by a filename to include its contents in your prompt:
 
-```nocopy-notype
+```
 > Review @src/app.py for code quality issues
 ```
 

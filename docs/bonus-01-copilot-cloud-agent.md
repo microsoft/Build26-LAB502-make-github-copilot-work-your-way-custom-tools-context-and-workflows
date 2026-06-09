@@ -26,40 +26,40 @@ You will push your Space Invaders project to a GitHub repository, create an issu
 
 ### Create a repository and push your code
 
-1. [] Open **Edge** and navigate to `https://github.com/organizations/Skillable-Events/repositories/new` to create a new repository.
+1.  Open **Edge** and navigate to `https://github.com/new` to create a new repository.
 
-2. [] Fill in the repository details:
-	- **Owner**: Make sure **Skillable-Events** is selected (it should be the default).
+2.  Fill in the repository details:
+	- **Owner**: Select the GitHub account or organization where you want to create the repository.
 	- **Repository name**: Choose something unique — for example, `space-invaders-<your-alias>` (replace **<your-alias>** with your alias or initial. Take note of the name you have chosen).
 	- Leave everything else as default.
-3. [] Click the **Create repository** button.
+3.  Click the **Create repository** button.
 
-4. [] Switch to Visual Studio Code
+4.  Switch to Visual Studio Code
 
-5. [] Open the **Source control** panel by clicking on the Git icon in the left sidebar.
-6. [] You should see all your files listed as uncommitted changes. Click the **+** icon at the top of the panel to stage all changes for commit.
-7. [] Hover over the files you want to push (**index.html** and the **.github/** folder, including **.github/skills/**) and click the **+** icon that appears to stage them for commit. There may be other files you don't care about in the **.playwright-mcp** folder. Don't stage those or delete them.
+5.  Open the **Source control** panel by clicking on the Git icon in the left sidebar.
+6.  You should see all your files listed as uncommitted changes. Click the **+** icon at the top of the panel to stage all changes for commit.
+7.  Hover over the files you want to push (**index.html** and the **.github/** folder, including **.github/skills/**) and click the **+** icon that appears to stage them for commit. There may be other files you don't care about in the **.playwright-mcp** folder. Don't stage those or delete them.
 
-8. [] Enter a commit message in the **Message** box, for example, `Initial commit` or click on the stars icon to generate a commit message using Copilot.
+8.  Enter a commit message in the **Message** box, for example, `Initial commit` or click on the stars icon to generate a commit message using Copilot.
 
-9. [] Click the **Commit** button.
+9.  Click the **Commit** button.
 
 
-10. [] Switch back to the browser tab where you created the repository. In the quick setup view, click the copy-to-clipboard icon next to the "... or push an existing repository from the command line" section to copy the Git commands needed to push your code.
+10.  Switch back to the browser tab where you created the repository. In the quick setup view, click the copy-to-clipboard icon next to the "... or push an existing repository from the command line" section to copy the Git commands needed to push your code.
 
 ![copy to clipboard push to existing repository commands](assets/copy-push-existing-repository-commands.png)
 
-11. [] Open a terminal and change to the space invaders directory if not already there (`c:\users\labuser\invaders`), then paste and run the commands you just copied to push your code to GitHub. The commands should look like this (notice the repo name is not correct in the example below):
+11.  Open a terminal and change to your **invaders** directory if you are not already there (for example, `cd <path-to-your-working-folder>/invaders`), then paste and run the commands you just copied to push your code to GitHub. The commands should look like this (notice the owner and repository name are placeholders in the example below):
 
-```ps1-notype-nocopy-
-git remote add origin https://github.com/Skillable-Events/space-invaders-XXXXXXXXX.git
+```ps1
+git remote add origin https://github.com/YOUR-GITHUB-OWNER/space-invaders.git
 git branch -M main
 git push -u origin main
 ```
 
-12. [] Click on **Sign in with your browser** when prompted to authenticate with GitHub and complete the authentication flow in the browser.
+12.  Click on **Sign in with your browser** when prompted to authenticate with GitHub and complete the authentication flow in the browser.
 
-13. [] Switch back to the browser tab where you created the repository and refresh the page (or navigate to the repository again if you closed it). You should now see the files you just pushed, including **.github/copilot-instructions.md** and the **skills/** folder with your custom agent skills.
+13.  Switch back to the browser tab where you created the repository and refresh the page (or navigate to the repository again if you closed it). You should now see the files you just pushed, including **.github/copilot-instructions.md** and the **skills/** folder with your custom agent skills.
 
 Your code is now on the GitHub repository you just created.
 
@@ -69,11 +69,11 @@ You can delegate the next task to Copilot cloud agent in two ways. Use **Option 
 
 #### Option A: Create the issue from github.com
 
-1. [] Open the browser and if not already on the repo open the repository. You should see the files you just pushed from Visual Studio Code.
+1.  Open the browser and if not already on the repo open the repository. You should see the files you just pushed from Visual Studio Code.
 
-2. [] In your repository on GitHub, click the **Issues** tab, then click **New issue** green button.
+2.  In your repository on GitHub, click the **Issues** tab, then click **New issue** green button.
 
-3. [] Fill in the issue:
+3.  Fill in the issue:
 	- **Title**: `Add persistent high score tracking`
 	- **Body**:
 	```
@@ -82,30 +82,30 @@ You can delegate the next task to Copilot cloud agent in two ways. Use **Option 
 	Keep all changes in the existing single HTML file — do not create additional files or add external dependencies.
 	```
 
-4. [] Before clicking **Submit new issue**, click the **Assignees** gear icon in the right sidebar and select **Copilot** from the dropdown. A dialog will appear asking you to confirm the repository and branch. Accept the defaults by clicking the **Assign** green button. You could select a specific model or an agent with specific skills here, but for this exercise, use the defaults.
+4.  Before clicking **Submit new issue**, click the **Assignees** gear icon in the right sidebar and select **Copilot** from the dropdown. A dialog will appear asking you to confirm the repository and branch. Accept the defaults by clicking the **Assign** green button. You could select a specific model or an agent with specific skills here, but for this exercise, use the defaults.
 
 > [!TIP]
 > Notice how the issue body reinforces the single-file constraint from `copilot-instructions.md`. This is intentional — it gives the agent clear acceptance criteria **and** the instructions file provides the same guardrail as always-on context. Belt and suspenders.
 
-5. [] Click **Create** green button to create the issue (scroll down if necessary).
+5.  Click **Create** green button to create the issue (scroll down if necessary).
 
-6. [] Once the issue is created, the cloud agent starts working. You will notice an **eyes** emoji reaction on the issue; this is Copilot acknowledging that it has seen the issue. After a few moments, the agent will open a pull request with the implementation.
+6.  Once the issue is created, the cloud agent starts working. You will notice an **eyes** emoji reaction on the issue; this is Copilot acknowledging that it has seen the issue. After a few moments, the agent will open a pull request with the implementation.
 
-7. [] Click on the pull request link to review the changes or click on the **Agents** tab to see the agent's activity feed, where you can watch the agent's progress in real time.
+7.  Click on the pull request link to review the changes or click on the **Agents** tab to see the agent's activity feed, where you can watch the agent's progress in real time.
 
-8. [] Click on the **View session** if you clicked on the pull request, or on the session name (the agent decides the name, but it could be something like "Implementing persistent high score tracking for the game") if you clicked on the **Agents** tab, to see the step-by-step actions taken by the agent.
+8.  Click on the **View session** if you clicked on the pull request, or on the session name (the agent decides the name, but it could be something like "Implementing persistent high score tracking for the game") if you clicked on the **Agents** tab, to see the step-by-step actions taken by the agent.
 
-9. [] Navigate at will to watch the decisions and operations being performed by the Copilot cloud agent.
+9.  Navigate at will to watch the decisions and operations being performed by the Copilot cloud agent.
 
-10. [] Once the agent finishes, you will see a **View pull request** green button at the bottom of the screen. Click it and review the pull request to verify that the changes respect the constraints you set in the instructions file and issue description.
+10.  Once the agent finishes, you will see a **View pull request** green button at the bottom of the screen. Click it and review the pull request to verify that the changes respect the constraints you set in the instructions file and issue description.
 
-11. [] Inspect the pull request body, this will have a summary of the changes made by the agent.
+11.  Inspect the pull request body, this will have a summary of the changes made by the agent.
 
-12. [] Review the code changes by clicking on "Files changed" tab.
+12.  Review the code changes by clicking on "Files changed" tab.
 
-13. [] You can ask Copilot questions about this diff by clicking the Copilot button.
+13.  You can ask Copilot questions about this diff by clicking the Copilot button.
 
-14. [] If you want Copilot to make changes, go to the **Conversation** tab and mention **@copilot** in a comment with the changes you want.
+14.  If you want Copilot to make changes, go to the **Conversation** tab and mention **@copilot** in a comment with the changes you want.
 
 
 > [!NOTE]
@@ -113,38 +113,38 @@ You can delegate the next task to Copilot cloud agent in two ways. Use **Option 
 
 #### Option B: Create a task from Visual Studio Code
 
-1. [] Switch to Visual Studio Code and open the **Copilot Chat** view.
+1.  Switch to Visual Studio Code and open the **Copilot Chat** view.
 
-2. [] At the bottom of the chat, click on the dropdown that says **Local** and select **Cloud**. This switches the context of the chat to the Copilot cloud agent.
+2.  At the bottom of the chat, click on the dropdown that says **Local** and select **Cloud**. This switches the context of the chat to the Copilot cloud agent.
 
-3. [] Enter the following prompt in the chat input box. Use the copy button, then paste the prompt:
+3.  Enter the following prompt in the chat input box. Use the copy button, then paste the prompt:
 
-```text-notype
+```text
 Track the player's highest score using localStorage and display it in the game's HUD (heads-up display) alongside the current score. When the player beats their high score, update it and show a brief celebration message.
 
 Keep all changes in the existing single HTML file — do not create additional files or add external dependencies.
 ```
 
-4. [] Submit the prompt and click **Delegate** when Copilot asks for your confirmation.
+4.  Submit the prompt and click **Delegate** when Copilot asks for your confirmation.
 
-5. [] Once cloud agent starts working, you can observe the progress in the **Copilot Chat** view, where the agent will provide updates on its actions and decisions as it works on the task.
+5.  Once cloud agent starts working, you can observe the progress in the **Copilot Chat** view, where the agent will provide updates on its actions and decisions as it works on the task.
 
 > [!NOTE]
 > You can see everything happening from Visual Studio Code because sessions, whether local or cloud, are visible and interactive from any Visual Studio Code instance that has access to the repository. In a real workflow, you might delegate the task and move on to other work. In this lab, let's observe the changes being made in GitHub.com.
 
-6. [] Switch to the browser and navigate to the repository you created on GitHub.
+6.  Switch to the browser and navigate to the repository you created on GitHub.
 
-7. [] Click the **Agents** tab. You should see the session you created from Visual Studio Code, including the name of the task it is working on (for example, "Implementing persistent high score tracking for the game"). Click it to see the step-by-step actions taken by the agent.
+7.  Click the **Agents** tab. You should see the session you created from Visual Studio Code, including the name of the task it is working on (for example, "Implementing persistent high score tracking for the game"). Click it to see the step-by-step actions taken by the agent.
 
-8. [] Navigate at will to watch the decisions and operations being performed by the Copilot cloud agent.
+8.  Navigate at will to watch the decisions and operations being performed by the Copilot cloud agent.
 
-9. [] You are able to steer the agent by giving it new instructions in the **Conversation** tab. For example, you could ask it to "Make sure to update the celebration message to also include confetti animation"
+9.  You are able to steer the agent by giving it new instructions in the **Conversation** tab. For example, you could ask it to "Make sure to update the celebration message to also include confetti animation"
 
-10. [] Once the agent finishes, you will see a **View pull request** green button at the bottom of the screen. Click it and review the pull request to verify that the changes respect the constraints you set in the instructions file and issue description.
+10.  Once the agent finishes, you will see a **View pull request** green button at the bottom of the screen. Click it and review the pull request to verify that the changes respect the constraints you set in the instructions file and issue description.
 
-11. [] Open the pull request. You can find it from the issue page (Copilot links it automatically) or from the **Pull requests** tab in your repository.
+11.  Open the pull request. You can find it from the issue page (Copilot links it automatically) or from the **Pull requests** tab in your repository.
 
-12. [] Review the changes in the PR and check that the Copilot cloud agent respected your customizations:
+12.  Review the changes in the PR and check that the Copilot cloud agent respected your customizations:
 
 - **Single file**: All changes are in the existing HTML file — no new files were created.
 - **No external dependencies**: No CDN links, npm packages, or external assets were added.

@@ -25,19 +25,22 @@ In this exercise you will open Visual Studio Code, sign in to GitHub Copilot, op
 
 ### Open Visual Studio Code and authenticate to GitHub Copilot
 
-1. [] Open **Visual Studio Code** (it is pinned on the taskbar).
-2. [] Click the Copilot icon in the bottom-right corner of the Visual Studio Code status bar, then click **Use AI Features**.
+> [!NOTE]
+> You can skip the authentication steps below if you are already signed in to GitHub Copilot in Visual Studio Code from a previous session. Jump straight to opening the **Copilot Chat** view.
+
+1.  Open **Visual Studio Code**.
+2.  Click the Copilot icon in the bottom-right corner of the Visual Studio Code status bar, then click **Use AI Features**.
 
 	![Copilot icon in the Visual Studio Code status bar](assets/copilot-icon-activity-bar.png)
 
-3. [] Click **Continue with GitHub** in the **Sign in to use AI Features** dialog. A browser window will open to complete the authentication flow.
-4. [] Since you are already authenticated in the browser, click the **Continue** green button on the **Authorize Visual Studio Code** page.
-5. [] Scroll down on the **Authorize Visual Studio Code** page and click the **Authorize Visual-Studio-Code** green button to grant permissions.
-6. [] A popup will appear: **This site is trying to open Visual Studio Code.** Click the **Open** button.
+3.  Click **Continue with GitHub** in the **Sign in to use AI Features** dialog. A browser window will open to complete the authentication flow.
+4.  Since you are already authenticated in the browser, click the **Continue** green button on the **Authorize Visual Studio Code** page.
+5.  Scroll down on the **Authorize Visual Studio Code** page and click the **Authorize Visual-Studio-Code** green button to grant permissions.
+6.  A popup will appear: **This site is trying to open Visual Studio Code.** Click the **Open** button.
 
 	![Browser prompt to open Visual Studio Code](assets/open-vscode.png)
 
-7. [] Open the **Copilot Chat** view if it isn't already visible (click **Toggle Chat** in the Activity Bar, or press <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>I</kbd>).
+7.  Open the **Copilot Chat** view if it isn't already visible (click **Toggle Chat** in the Activity Bar, or press <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>I</kbd>).
 
 > [!NOTE]
 > The **sessions list** in the Chat view gives you a unified view of all your Copilot conversations, regardless of where they started. Sessions are shared across surfaces, so the CLI session you created earlier (Copilot names sessions automatically, for example "invaders") appears right alongside any Visual Studio Code or Cloud Agent sessions.
@@ -48,7 +51,7 @@ In this exercise you will open Visual Studio Code, sign in to GitHub Copilot, op
 
 Now let's inspect the available customizations and look at one of the built-in skills to see how it is defined.
 
-8. [] Open the **Agent Customizations** view. There are two equivalent ways:
+8.  Open the **Agent Customizations** view. There are two equivalent ways:
 
 	- Click the **gear** ⚙ icon in the Copilot Chat title bar and choose **Open Customizations**.
 
@@ -58,17 +61,17 @@ Now let's inspect the available customizations and look at one of the built-in s
 
 		![Command Palette: Chat: Open Customizations](assets/vscode-open-customizations-command.png)
 
-9. [] Take a moment to look at the left-hand navigation. You should see one entry per customization type - **Agents**, **Skills**, **Instructions**, **Prompts**, **Hooks**, **MCP Servers**, and **Plugins** - with a count next to each one showing how many are currently available.
+9.  Take a moment to look at the left-hand navigation. You should see one entry per customization type - **Agents**, **Skills**, **Instructions**, **Prompts**, **Hooks**, **MCP Servers**, and **Plugins** - with a count next to each one showing how many are currently available.
 
 	![Agent Customizations overview](assets/vscode-copilot-agent-customizations.png)
 
-10. [] Click **Skills** in the left navigation. You will see skills grouped by source - for example **Extensions** (contributed by installed extensions) and **Built-In** (shipped with Visual Studio Code).
+10.  Click **Skills** in the left navigation. You will see skills grouped by source - for example **Extensions** (contributed by installed extensions) and **Built-In** (shipped with Visual Studio Code).
 
 	![Skills list in Agent Customizations](assets/vscode-copilot-agent-customizations-windows-skills.png)
 
-11. [] Pick **any built-in skill** from the list that catches your attention (for example **create-instructions**, which you will use later) and click it.
+11.  Pick **any built-in skill** from the list that catches your attention (for example **create-instructions**, which you will use later) and click it.
 
-12. [] Visual Studio Code will open the skill's **SKILL.md** file. Read through it and notice:
+12.  Visual Studio Code will open the skill's **SKILL.md** file. Read through it and notice:
 
 	- The **YAML front matter** at the top with a **name** and a **description** - this is what Copilot matches against when deciding whether the skill is relevant to your prompt.
 	- The **Markdown body** below the front matter - these are the natural-language instructions the agent will follow when the skill is invoked. There is **no special DSL**: it is just structured prose telling the agent what to do, step by step.
