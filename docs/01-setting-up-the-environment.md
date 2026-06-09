@@ -1,9 +1,5 @@
 # Setting up the environment
 
-> [!Hint]
-> Under regular conditions you would need to ensure all prerequisites are installed, but don't worry. We have ensured this environment has all you need.
-
-
 > [!NOTE]
 > GitHub Copilot uses Large Language Models (LLMs), which generate responses probabilistically rather than deterministically. This means that the exact suggestions, code, and interactions you see may differ from what's shown in these instructions. This is normal and expected behavior! Use your best judgment to adapt the suggestions to your needs, and don't hesitate to iterate with Copilot if the first suggestion isn't quite right.
 
